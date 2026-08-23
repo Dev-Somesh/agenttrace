@@ -28,6 +28,7 @@
  * @property {string} id
  * @property {string} name
  * @property {string} path         Shown so the reader knows what they are reading.
+ * @property {string|null} [rel]   Repo-relative path, when the file is in the project.
  * @property {string|null} updatedAt
  * @property {number} bytes
  * @property {string} markdown
@@ -35,6 +36,7 @@
  * @typedef {object} Session
  * @property {string} id
  * @property {string} sourceId
+ * @property {string} [sourceLabel]       Filled by the server from the source registry.
  * @property {string|null} startedAt      ISO 8601.
  * @property {string|null} lastActivityAt ISO 8601.
  * @property {Run[]} runs

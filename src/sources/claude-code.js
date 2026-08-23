@@ -11,6 +11,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { consumedTokens, statusFromLastWrite } from "./types.js";
+import { readJsonl, repoRelative, filesFromCommand } from "./read.js";
 
 const ROOT = path.join(os.homedir(), ".claude", "projects");
 
@@ -19,77 +20,36 @@ const WRITE_TOOLS = new Set(["Write", "Edit", "MultiEdit", "NotebookEdit"]);
 /** Parsed transcripts, invalidated on mtime — history re-reads a lot. */
 const cache = new Map();
 
-function readJsonl(file) {
-  let raw;
-  try {
-    raw = fs.readFileSync(file, "utf8");
-  } catch {
-    return [];
-  }
-  const out = [];
-  for (const line of raw.split("\n")) {
-    const t = line.trim();
-    if (!t) continue;
-    try {
-      out.push(JSON.parse(t));
-    } catch {
-      /* a live session may be mid-write */
-    }
-  }
-  return out;
-}
-
 /**
  * Claude encodes a project path by replacing separators AND whitespace with
  * "-", so "/a/My Repo/b" becomes "-a-My-Repo-b".
  */
 const encode = (p) => p.replace(/[/\s]+/g, "-");
 
-function projectDir(cwd) {
-  const direct = path.join(ROOT, encode(cwd));
+function projectDir(cwd, root = ROOT) {
+  const direct = path.join(root, encode(cwd));
   if (fs.existsSync(direct)) return direct;
   // Fall back to a case-insensitive match on the encoded name.
   const want = encode(cwd).toLowerCase();
   try {
     const hit = fs
-      .readdirSync(ROOT, { withFileTypes: true })
+      .readdirSync(root, { withFileTypes: true })
       .filter((d) => d.isDirectory())
       .find((d) => d.name.toLowerCase() === want || want.endsWith(d.name.toLowerCase()));
-    return hit ? path.join(ROOT, hit.name) : null;
+    return hit ? path.join(root, hit.name) : null;
   } catch {
     return null;
   }
-}
-
-function makeRelative(repoRoot, p, mustExist = false) {
-  if (typeof p !== "string" || !p) return null;
-  const abs = path.isAbsolute(p) ? p : path.resolve(repoRoot, p);
-  if (!abs.startsWith(repoRoot)) return null;
-  const rel = abs.slice(repoRoot.length).replace(/^\/+/, "");
-  if (!rel || rel.startsWith("node_modules") || rel.startsWith("dist")) return null;
-  // Only paths scraped out of shell commands need checking against disk: a
-  // regex can invent a name that was never a file. Paths a tool named
-  // explicitly are always real, and checking those would erase the history of
-  // every file since deleted.
-  if (mustExist && !fs.existsSync(abs)) return null;
-  return rel;
 }
 
 function filesTouched(block, repoRoot) {
   const input = block?.input || {};
   const out = new Set();
   for (const key of ["file_path", "path", "notebook_path"]) {
-    const rel = makeRelative(repoRoot, input[key]);
+    const rel = repoRelative(repoRoot, input[key]);
     if (rel) out.add(rel);
   }
-  if (typeof input.command === "string") {
-    for (const m of input.command.matchAll(
-      /(?:^|[\s"'><|])((?:[\w.@-]+\/)*[\w.@-]+\.(?:tsx?|jsx?|mjs|cjs|css|html|json|md|ya?ml|py|go|rs|rb|sh))/g
-    )) {
-      const rel = makeRelative(repoRoot, m[1], true);
-      if (rel) out.add(rel);
-    }
-  }
+  for (const f of filesFromCommand(input.command, repoRoot)) out.add(f);
   return out;
 }
 
@@ -205,8 +165,8 @@ export const claudeCode = {
     return fs.existsSync(ROOT);
   },
 
-  sessions({ cwd }) {
-    const dir = projectDir(cwd);
+  sessions({ cwd, root = ROOT }) {
+    const dir = projectDir(cwd, root);
     if (!dir) return [];
 
     const files = fs
@@ -244,11 +204,11 @@ export const claudeCode = {
 };
 
 /**
- * Markdown Claude Code keeps alongside a project.
+ * Markdown this runner keeps beside *this* project.
  *
- * Purely additive: a source that has no such concept omits `documents` and the
- * UI hides the tab. Only directories that actually exist and contain files are
- * returned, so an empty install shows nothing rather than four empty headings.
+ * User-global folders are ignored on purpose: they mix every repo on the
+ * machine, so a plan written for something else would show up here. The
+ * package ships its own samples when a project has none.
  */
 const DOC_KINDS = [
   { id: "plans", label: "Plans" },
@@ -259,7 +219,7 @@ const DOC_KINDS = [
 
 const MAX_DOC_BYTES = 256 * 1024;
 
-function readDocs(dir, scope, kind) {
+function readDocs(dir, scope, kind, cwd) {
   let names;
   try {
     names = fs.readdirSync(dir);
@@ -296,6 +256,7 @@ function readDocs(dir, scope, kind) {
       id: `${scope}:${kind}:${name}`,
       name: name.replace(/\.md$/, ""),
       path: file.replace(os.homedir(), "~"),
+      rel: repoRelative(cwd, file),
       updatedAt: new Date(stat.mtimeMs).toISOString(),
       bytes: stat.size,
       markdown,
@@ -307,22 +268,17 @@ function readDocs(dir, scope, kind) {
 }
 
 claudeCode.documents = function documents({ cwd }) {
-  const roots = [
-    { scope: "project", base: path.join(cwd, ".claude") },
-    { scope: "user", base: path.join(os.homedir(), ".claude") },
-  ];
+  const base = path.join(cwd, ".claude");
   const out = [];
-  for (const { scope, base } of roots) {
-    for (const kind of DOC_KINDS) {
-      const items = readDocs(path.join(base, kind.id), scope, kind.id);
-      if (!items) continue;
-      out.push({
-        id: `${scope}-${kind.id}`,
-        label: scope === "project" ? `${kind.label} (project)` : kind.label,
-        scope,
-        items,
-      });
-    }
+  for (const kind of DOC_KINDS) {
+    const items = readDocs(path.join(base, kind.id), "project", kind.id, cwd);
+    if (!items) continue;
+    out.push({
+      id: `project-${kind.id}`,
+      label: `${kind.label} (project)`,
+      scope: "project",
+      items,
+    });
   }
   return out;
 };
