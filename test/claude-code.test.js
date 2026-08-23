@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -114,4 +115,48 @@ test("documents from the home directory of another project are ignored", () => {
   const { cwd } = stage();
   const docs = claudeCode.documents({ cwd });
   assert.ok(!docs.some((c) => c.items.some((it) => it.name === "demo")));
+});
+
+test("documents are read from the user root as well as the project root", () => {
+  // A refactor dropped the user root, so plans — which live in ~/.claude/plans,
+  // not <cwd>/.claude — stopped being found. Because sample documents appear
+  // when a project has none, the failure rendered as a working empty state
+  // rather than as a bug. Assert both roots are scanned.
+  const src = readFileSync(new URL("../src/sources/claude-code.js", import.meta.url), "utf8");
+  const fn = src.slice(src.indexOf("claudeCode.documents"));
+  assert.match(fn, /os\.homedir\(\)/, "user root (~/.claude) must be scanned");
+  assert.match(fn, /cwd, "\.claude"/, "project root (<cwd>/.claude) must be scanned");
+  assert.match(fn, /scope: "user"/, "user-scope collections must be labelled");
+});
+
+test("sample documents stand in for nothing, they do not replace something", () => {
+  // The fallback is correct only while it is a fallback. If it ever fires with
+  // real documents present, a real plan disappears behind a sample.
+  const src = readFileSync(new URL("../src/sources/index.js", import.meta.url), "utf8");
+  assert.match(
+    src,
+    /if\s*\(\s*!out\.length\s*\)/,
+    "examples must be added only when nothing real was found"
+  );
+});
+
+test("a project sees its own plan, and not another project's", () => {
+  // Plans live in ~/.claude/plans, which is user-wide. Scanning it wholesale
+  // would show one project's plans inside another; not scanning it at all
+  // meant plans were never visible, since there is no project-scoped plans
+  // directory. Sessions record the slug of the plan they worked from, and that
+  // slug is the filename — so match on it.
+  const src = readFileSync(new URL("../src/sources/claude-code.js", import.meta.url), "utf8");
+  const fn = src.slice(src.indexOf("claudeCode.documents"));
+  assert.match(fn, /projectSlugs/, "user plans must be filtered by session slug");
+  assert.doesNotMatch(
+    fn,
+    /for \(const kind of DOC_KINDS\)[\s\S]{0,200}homedir/,
+    "the user root must not be walked kind-by-kind — that returns other projects' documents"
+  );
+
+  // The slug is stamped on subagent transcripts, not reliably near the top of
+  // a session file. Scanning only session files finds nothing.
+  const slugFn = src.slice(src.indexOf("function projectSlugs"));
+  assert.match(slugFn, /subagents/, "slug scan must include subagent transcripts");
 });

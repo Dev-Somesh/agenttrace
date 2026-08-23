@@ -304,6 +304,50 @@ function readDocs(dir, scope, kind, cwd) {
   return items;
 }
 
+/**
+ * Slugs of sessions belonging to this project.
+ *
+ * Plans live in `~/.claude/plans`, which is user-wide — showing all of them
+ * would put one project's plans in front of another, which is why the user
+ * root is not scanned wholesale. But a session records the slug of the plan it
+ * was working from, and that slug is the plan's filename. Matching on it shows
+ * this project's plan and nothing else.
+ */
+function projectSlugs(cwd) {
+  const dir = projectDir(cwd);
+  const slugs = new Set();
+  if (!dir) return slugs;
+  // The slug is stamped on subagent records rather than reliably near the top
+  // of a session file, so both are scanned.
+  const files = [];
+  try {
+    for (const name of fs.readdirSync(dir)) {
+      const full = path.join(dir, name);
+      if (name.endsWith(".jsonl")) files.push(full);
+      const subDir = path.join(full, "subagents");
+      if (fs.existsSync(subDir)) {
+        for (const sub of fs.readdirSync(subDir)) {
+          if (sub.endsWith(".jsonl")) files.push(path.join(subDir, sub));
+        }
+      }
+    }
+  } catch {
+    return slugs;
+  }
+
+  for (const file of files) {
+    let seen = 0;
+    for (const rec of readJsonl(file)) {
+      if (rec.slug) {
+        slugs.add(rec.slug);
+        break; // one slug per transcript is enough
+      }
+      if (++seen > 200) break;
+    }
+  }
+  return slugs;
+}
+
 claudeCode.documents = function documents({ cwd }) {
   const base = path.join(cwd, ".claude");
   const out = [];
@@ -317,5 +361,22 @@ claudeCode.documents = function documents({ cwd }) {
       items,
     });
   }
+
+  // Plans this project actually worked from, matched by session slug rather
+  // than by scanning the whole user directory.
+  const slugs = projectSlugs(cwd);
+  if (slugs.size) {
+    const userPlans = readDocs(
+      path.join(os.homedir(), ".claude", "plans"),
+      "user",
+      "plans",
+      cwd
+    );
+    const mine = (userPlans || []).filter((item) => slugs.has(item.name));
+    if (mine.length) {
+      out.push({ id: "user-plans", label: "Plans", scope: "user", items: mine });
+    }
+  }
+
   return out;
 };
