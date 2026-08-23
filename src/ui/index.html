@@ -644,9 +644,9 @@ function draw(d){
   const list=document.getElementById("hist");
   list.innerHTML=d.sessions.map(s=>`
     <div class="hs">
-      <div class="hh"><b>${esc(s.sourceLabel||"")} · ${esc(String(s.startedAt).slice(0,16).replace("T"," "))}</b>
+      <div class="hh"><b>${esc(s.sourceLabel||"")} · ${esc(String(s.lastActivityAt||s.startedAt).slice(0,16).replace("T"," "))}</b>
         ${s.id===(cur&&cur.id)?'<span class="tag running">current</span>':now.some(n=>n.id===s.id)?'<span class="tag running">now</span>':""}
-        <span class="m">${esc(s.id.slice(0,8))} · ${tok(s.totals||{},"tokens")} conversation · ${s.runs.length} runs, ${(()=>{const m=s.runs.filter(measured);return m.length?fmt(m.reduce((n,r)=>n+r.tokens,0)):"—";})()} delegated${s.runs.length>1?` · peak ${s.concurrency.peak}`:""}</span></div>
+        <span class="m">${esc(s.id.slice(0,8))} · started ${esc(String(s.startedAt).slice(0,16).replace("T"," "))} · ${tok(s.totals||{},"tokens")} conversation · ${s.runs.length} runs, ${(()=>{const m=s.runs.filter(measured);return m.length?fmt(m.reduce((n,r)=>n+r.tokens,0)):"—";})()} delegated${s.runs.length>1?` · peak ${s.concurrency.peak}`:""}</span></div>
       ${s.shared.length?`<div style="margin:2px 0 10px;padding:6px 0;border-top:1px solid var(--grid);border-bottom:1px solid var(--grid)"><svg data-s="${esc(s.id)}"></svg></div>`:""}
       ${!s.runs.length?'<div class="hr2"><span class="nm" style="color:var(--dim)">No subagents — the main agent did this session itself</span></div>':""}
       ${s.runs.map(r=>`<div class="hr2"><span class="nm">${esc(r.name)}</span>

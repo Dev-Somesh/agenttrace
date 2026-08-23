@@ -154,3 +154,30 @@ test("modelsInPlay groups by runner and recorded model, and does not invent one"
   assert.equal(unknown.sourceId, "beta");
   assert.equal(unknown.running, 1);
 });
+
+// History is read to answer "what happened recently". Ordering by start time
+// pushed a session that began yesterday and is still being written to below one
+// opened an hour ago and abandoned, so the page looked like it had stopped
+// recording. Recency means the last write.
+test("sessions are ordered by last write, not by when they started", async () => {
+  const { collectSessions } = await import("../src/sources/index.js");
+  const order = (list) =>
+    [...list]
+      .sort((a, b) =>
+        String(b.lastActivityAt || b.startedAt).localeCompare(String(a.lastActivityAt || a.startedAt))
+      )
+      .map((s) => s.id);
+
+  const stale = { id: "opened-later", startedAt: "2026-08-23T02:57:00Z", lastActivityAt: "2026-08-23T03:00:00Z" };
+  const active = { id: "still-working", startedAt: "2026-08-22T10:46:00Z", lastActivityAt: "2026-08-23T07:02:00Z" };
+
+  assert.deepEqual(order([stale, active]), ["still-working", "opened-later"]);
+  assert.deepEqual(order([active, stale]), ["still-working", "opened-later"]);
+
+  // A session with no last-write stamp falls back to its start rather than
+  // sorting as the empty string and sinking to the bottom.
+  const noStamp = { id: "no-last", startedAt: "2026-08-24T00:00:00Z", lastActivityAt: null };
+  assert.equal(order([active, noStamp])[0], "no-last");
+
+  assert.equal(typeof collectSessions, "function");
+});

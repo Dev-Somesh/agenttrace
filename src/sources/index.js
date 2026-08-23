@@ -64,6 +64,11 @@ export function collectSessions(cwd) {
       problems.push(`${source.id}: ${err.message}`);
     }
   }
-  sessions.sort((a, b) => String(b.startedAt).localeCompare(String(a.startedAt)));
+  // By last write, not by start. A session that began yesterday and is still
+  // being written to is more recent than one opened an hour ago and abandoned;
+  // ordering by start pushed the active session down the page and made History
+  // look like it had stopped recording.
+  const recency = (x) => String(x.lastActivityAt || x.startedAt || "");
+  sessions.sort((a, b) => recency(b).localeCompare(recency(a)));
   return { sessions, problems };
 }
