@@ -1,5 +1,7 @@
 # agenttrace
 
+[![CI](https://github.com/Dev-Somesh/agenttrace/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Dev-Somesh/agenttrace/actions/workflows/ci.yml)
+
 **See what your coding agents actually did.**
 
 Run several agents in parallel and you lose sight of them. Which one burned the

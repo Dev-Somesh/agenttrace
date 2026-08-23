@@ -183,6 +183,17 @@ current UI deliberately shows file paths, not commands.
 seconds. Parsed transcripts are cached and invalidated on mtime. Preserve that
 or the tool will re-parse tens of megabytes a minute.
 
+## Read the badge, not just the local run
+
+The README carries a CI badge and `main` requires the matrix to pass before a
+merge. Both exist because of a real failure: the CI matrix was added in dea6350
+and did not pass once until 7a5d991 — five consecutive red runs — while every
+report said green, because `npm test` succeeded locally on Node 23.
+
+A gate nobody reads is not a gate. The badge makes red visible on the repo page;
+branch protection makes it block. Do not remove either to unblock a push — fix
+the run.
+
 ## CI enforces four claims
 
 `.github/workflows/ci.yml` runs the tests on Node 18/20/22 and then checks the
