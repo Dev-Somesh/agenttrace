@@ -19,6 +19,12 @@ Opens a local console at `http://127.0.0.1:4180` for the project you ran it in.
 The page names that project and lists every runner and model that has a session
 on it — two tools in two chats, both shown.
 
+![Shared files: which runs touched the same file](docs/screenshots/portfolio-graph.png)
+
+*Runs on the left, files two or more of them touched on the right. Every edge
+was observed in a transcript — a run appears against a file because it opened
+it, not because its instructions said it would.*
+
 ---
 
 ## What it shows
@@ -85,6 +91,49 @@ so a run quiet for 90 seconds reads as finished. The interface states this.
 **Interconnection is per session.** Two runs months apart both reading a shared
 config were not collaborating. Within one session, touching the same file means
 working the same ground.
+
+## The console
+
+Four tabs. These are real sessions on a real project — two runners, six
+sessions, fourteen runs.
+
+**Now** — what the current conversation spent, what it delegated, and whether
+the runs actually overlapped.
+
+![Now tab](docs/screenshots/portfolio-now.png)
+
+**History** — every session found for the project, newest write first, each
+with its own runs and shared-file graph.
+
+![History tab](docs/screenshots/portfolio-history.png)
+
+**Docs** — plans, skills, agents, commands and rules the runner keeps beside
+this project, rendered in place.
+
+![Docs tab](docs/screenshots/portfolio-docs.png)
+
+### On a project with almost nothing to show
+
+Pointed at a repo with one Cursor run and no subagents, the console says so
+rather than inventing activity. Cursor records no token usage, so those figures
+read `—`, not `0` — unmeasured, not free.
+
+![agenttrace pointed at its own repository](docs/screenshots/agenttrace-now.png)
+
+<details>
+<summary>The other tabs on that same sparse project</summary>
+
+A graph with nothing shared, a history of one session, and a Docs tab falling
+back to shipped samples because the project keeps none of its own. Each says
+what it found rather than rendering blank.
+
+![Graph, nothing shared](docs/screenshots/agenttrace-graph.png)
+
+![History, one session](docs/screenshots/agenttrace-history.png)
+
+![Docs, falling back to samples](docs/screenshots/agenttrace-docs.png)
+
+</details>
 
 ## Privacy
 

@@ -78,6 +78,18 @@ halves were badly wrong, which is why neither was noticed. An unlisted model
 must report no cost at all; a blank prompts someone to check, a wrong number
 does not. There is a test holding this.
 
+**README screenshots use relative paths, which npm will not render.** They
+resolve on GitHub and are excluded from the published tarball by the `files`
+array, so the package stays ~43 kB. npmjs.com does not resolve relative image
+paths: before publishing, swap them for absolute
+`raw.githubusercontent.com/Dev-Somesh/agenttrace/main/...` URLs, which work in
+both places — but only once the repo is public, since raw URLs on a private
+repo need a token and would render broken.
+
+The screenshots are of real transcripts from a real project. They show file
+paths and truncated prompts. Regenerating them against a fixture project is the
+way to remove that if these ever go somewhere more public than the repo.
+
 **Reader-supplied prices live in `agenttrace.json`, not in `src/prices.js`.**
 The README used to say to edit `src/prices.js`. Under `npx` that file sits in a
 node_modules cache, so the single documented modification of this tool was
