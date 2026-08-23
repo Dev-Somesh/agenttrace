@@ -535,6 +535,9 @@ function draw(d){
   const overlapPct=c.wallMs?Math.round(c.overlapMs/c.wallMs*100):0;
   const many=now.length>1;
 
+  // The session this console is reporting on. `now` may hold several active
+  // sessions; `current` is the one the header names.
+  const cur=d.current||now[0]||null;
   const mt=cur?cur.totals||{}:{};
   document.getElementById("src").textContent=
     ((d.sources||[]).map(s=>s.label).join(" · ")||"no runner found")

@@ -215,6 +215,18 @@ reloading cannot fix it. The banner does still mention reloading — as a
 negation, since it is the reader's instinct — and a test enforces that
 distinction: `reload` may appear only near a negation, never as an instruction.
 
+**The UI is tested by rendering it.** `test/ui.test.js` runs the page script
+against a permissive Proxy-based DOM stub and calls `draw()` with a real
+`buildState()` payload. It exists because a merge left `cur` referenced after
+the variable had been refactored away, and the console rendered nothing — no
+runs, no history, no graph, no Docs tab — while the API returned all of it
+correctly and 67 tests stayed green. Every test checked data; none checked that
+the page could draw it.
+
+The stub is deliberately permissive so the test fails on real script errors
+rather than on whichever DOM method the UI uses next. When adding to it, verify
+it fails for the right reason: reintroduce the fault and watch it go red.
+
 **Assert what must be absent, not only what is present.** Both tests here were
 weak in the same way at first. One checked that three filenames appeared in the
 build list, which passed happily while `prices.js` was missing — it pinned an
