@@ -34,6 +34,10 @@ claim from "its instructions said it would".
 **History** — every session found for the project, with per-session graphs, so
 you can see what a run cost weeks later.
 
+**Docs** — plans, skills and agent definitions the runner keeps beside your
+project, rendered in place. The tab appears only when there is something to
+show, and `--docs plans,skills` narrows it.
+
 ## Why the numbers are what they are
 
 **Cache reads are excluded from token totals.** They re-report the entire prompt
@@ -67,6 +71,7 @@ npx agenttrace --port 5000     # different port
 npx agenttrace --dir <path>    # another project
 npx agenttrace --json          # print the data and exit
 npx agenttrace --sources       # list detected agent runners
+npx agenttrace --docs plans    # show only these document collections
 ```
 
 `--json` makes it scriptable: pipe it into `jq` for cost reporting, or assert on

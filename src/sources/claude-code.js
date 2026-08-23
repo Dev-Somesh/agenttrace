@@ -242,3 +242,87 @@ export const claudeCode = {
     return out.sort((a, b) => String(b.startedAt).localeCompare(String(a.startedAt)));
   },
 };
+
+/**
+ * Markdown Claude Code keeps alongside a project.
+ *
+ * Purely additive: a source that has no such concept omits `documents` and the
+ * UI hides the tab. Only directories that actually exist and contain files are
+ * returned, so an empty install shows nothing rather than four empty headings.
+ */
+const DOC_KINDS = [
+  { id: "plans", label: "Plans" },
+  { id: "skills", label: "Skills" },
+  { id: "agents", label: "Agents" },
+  { id: "commands", label: "Commands" },
+];
+
+const MAX_DOC_BYTES = 256 * 1024;
+
+function readDocs(dir, scope, kind) {
+  let names;
+  try {
+    names = fs.readdirSync(dir);
+  } catch {
+    return null;
+  }
+  const items = [];
+  for (const name of names) {
+    const full = path.join(dir, name);
+    let stat;
+    try {
+      stat = fs.statSync(full);
+    } catch {
+      continue;
+    }
+    // A skill is a directory containing SKILL.md; a plan is a bare .md file.
+    let file = full;
+    if (stat.isDirectory()) {
+      const inner = ["SKILL.md", "README.md", `${name}.md`].map((f) => path.join(full, f));
+      file = inner.find((f) => fs.existsSync(f));
+      if (!file) continue;
+      stat = fs.statSync(file);
+    } else if (!name.endsWith(".md")) {
+      continue;
+    }
+    if (stat.size > MAX_DOC_BYTES) continue;
+    let markdown = "";
+    try {
+      markdown = fs.readFileSync(file, "utf8");
+    } catch {
+      continue;
+    }
+    items.push({
+      id: `${scope}:${kind}:${name}`,
+      name: name.replace(/\.md$/, ""),
+      path: file.replace(os.homedir(), "~"),
+      updatedAt: new Date(stat.mtimeMs).toISOString(),
+      bytes: stat.size,
+      markdown,
+    });
+  }
+  if (!items.length) return null;
+  items.sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
+  return items;
+}
+
+claudeCode.documents = function documents({ cwd }) {
+  const roots = [
+    { scope: "project", base: path.join(cwd, ".claude") },
+    { scope: "user", base: path.join(os.homedir(), ".claude") },
+  ];
+  const out = [];
+  for (const { scope, base } of roots) {
+    for (const kind of DOC_KINDS) {
+      const items = readDocs(path.join(base, kind.id), scope, kind.id);
+      if (!items) continue;
+      out.push({
+        id: `${scope}-${kind.id}`,
+        label: scope === "project" ? `${kind.label} (project)` : kind.label,
+        scope,
+        items,
+      });
+    }
+  }
+  return out;
+};

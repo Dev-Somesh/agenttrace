@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
-import { collectSessions, availableSources } from "./sources/index.js";
+import { collectSessions, collectDocuments, availableSources } from "./sources/index.js";
 import { sharedFiles, ownFiles, lifetime, concurrency } from "./analyse.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -24,7 +24,7 @@ function uiVersion() {
   }
 }
 
-export function buildState(cwd) {
+export function buildState(cwd, { docs = null } = {}) {
   const { sessions, problems } = collectSessions(cwd);
 
   const enriched = sessions.map((s) => {
@@ -48,6 +48,7 @@ export function buildState(cwd) {
     current,
     sessions: enriched,
     lifetime: lifetime(sessions),
+    documents: collectDocuments(cwd, docs),
   };
 }
 
@@ -61,13 +62,13 @@ const send = (res, code, body, type) => {
   res.end(body);
 };
 
-export function createServer({ cwd }) {
+export function createServer({ cwd, docs = null }) {
   return http.createServer((req, res) => {
     const url = (req.url || "/").split("?")[0];
 
     if (url === "/api/state") {
       try {
-        return send(res, 200, JSON.stringify(buildState(cwd), null, 2), "application/json");
+        return send(res, 200, JSON.stringify(buildState(cwd, { docs }), null, 2), "application/json");
       } catch (err) {
         return send(res, 500, JSON.stringify({ error: String(err) }), "application/json");
       }

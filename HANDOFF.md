@@ -36,7 +36,7 @@ src/
   analyse.js          sharedFiles, ownFiles, lifetime, concurrency
   sources/
     types.js          the Source interface + token accounting
-    claude-code.js    first implementation
+    claude-code.js    first implementation (sessions + documents)
     index.js          registry
   ui/index.html       single-file UI, no build step
 ```
@@ -66,6 +66,19 @@ a shared config were not collaborating.
 transcripts carry no terminal marker. The UI says so. Do not present it as
 fact.
 
+**Documents are an optional source capability, not a feature of the app.** A
+source may implement `documents({cwd})` and return collections of markdown a
+runner keeps beside a project — Claude Code returns plans, skills, agents and
+commands from both `.claude/` and `~/.claude/`. Two rules hold it together: a
+source that has no such concept simply omits the method, and only directories
+that exist *and contain files* are returned, so an empty install shows nothing
+rather than four empty headings. The Docs tab hides itself when there is
+nothing to show. `--docs plans,skills` filters what surfaces.
+
+This is the shape any "show me X from my project" request should take. The
+temptation is to read a path directly from the server or the UI; that breaks
+the boundary the CI now enforces.
+
 **Render failures must not read as connection failures.** An early version
 wrapped fetch and every renderer in one `try/catch`, so a drawing bug reported
 "is the server running?" and sent people to restart a healthy process. Keep
@@ -90,14 +103,18 @@ was found.
    Cursor, Aider, or OpenAI Codex CLI would each validate or break the shape.
    Expect `filesTouched` to be the awkward part.
 
-3. **Cost, not just tokens.** A per-model price table turns token counts into
+3. **Document search.** With plans, skills and agent definitions in one place,
+   a filter across them is the obvious next step. Keep it client-side — the
+   payload is already loaded.
+
+4. **Cost, not just tokens.** A per-model price table turns token counts into
    money, which is what most people actually want. Keep prices in one file and
    be explicit they are user-maintained rather than fetched.
 
-4. **`--since` / `--json` filters** so it can be used in CI to assert a run
+5. **`--since` / `--json` filters** so it can be used in CI to assert a run
    stayed within budget.
 
-5. **Export.** A single self-contained HTML file for a run, shareable in a PR.
+6. **Export.** A single self-contained HTML file for a run, shareable in a PR.
 
 ## Things to be careful about
 
@@ -113,8 +130,29 @@ current UI deliberately shows file paths, not commands.
 seconds. Parsed transcripts are cached and invalidated on mtime. Preserve that
 or the tool will re-parse tens of megabytes a minute.
 
+## CI enforces four claims
+
+`.github/workflows/ci.yml` runs the tests on Node 18/20/22 and then checks the
+things this project actually promises, rather than generic hygiene:
+
+- **Zero runtime dependencies.** A dependency should arrive deliberately.
+- **No vendor name outside `src/sources/`.** The boundary is the product.
+- **No outbound network calls anywhere in `src/`.** "Reads local files and
+  sends nothing" is the reputation, not a preference.
+- **The CLI answers `--help` with no runner installed**, which is the state a
+  first-time user is in.
+
+GitHub will suggest Webpack, Deno and SLSA workflows for this repo. Ignore
+them: there is no build step, the runtime is Node, and nothing is published. If
+you do publish, npm's built-in `--provenance` is simpler than the generic SLSA
+generator.
+
 ## Origin
 
 Built 2026-08-22/23 alongside a portfolio rebuild. The first thing it surfaced
 was a *parallel session* running two agents that would otherwise have gone
 unnoticed — which is a fair summary of why it exists.
+
+It began as `tools/agent-dashboard/` inside that portfolio repo. That copy has
+been deleted: two implementations of the same tool means every fix is made
+twice and they drift. This repo is the only one.

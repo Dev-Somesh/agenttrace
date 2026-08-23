@@ -14,6 +14,23 @@
  * @property {string} label         Human name shown in the UI.
  * @property {() => boolean} detect Is this runner present on this machine?
  * @property {(opts: {cwd: string}) => Session[]} sessions
+ * @property {((opts: {cwd: string}) => DocumentCollection[])} [documents]
+ *   Optional. Markdown a runner keeps alongside a project — plans, skills,
+ *   agent definitions. Sources that have no such concept simply omit this.
+ *
+ * @typedef {object} DocumentCollection
+ * @property {string} id
+ * @property {string} label
+ * @property {string} scope        "project" or "user".
+ * @property {Document[]} items
+ *
+ * @typedef {object} Document
+ * @property {string} id
+ * @property {string} name
+ * @property {string} path         Shown so the reader knows what they are reading.
+ * @property {string|null} updatedAt
+ * @property {number} bytes
+ * @property {string} markdown
  *
  * @typedef {object} Session
  * @property {string} id

@@ -21,6 +21,31 @@ export function availableSources() {
 }
 
 /**
+ * Documents from every source that offers them.
+ *
+ * Optional by design: a source with no such concept omits `documents`, and the
+ * UI hides the tab entirely rather than showing empty headings.
+ *
+ * `only` filters by collection id, so a project can choose what it surfaces.
+ */
+export function collectDocuments(cwd, only = null) {
+  const out = [];
+  for (const source of availableSources()) {
+    if (typeof source.documents !== "function") continue;
+    try {
+      out.push(...source.documents({ cwd }));
+    } catch {
+      /* a broken source must not take the rest down */
+    }
+  }
+  if (!only || !only.length) return out;
+  const wanted = new Set(only.map((s) => s.toLowerCase()));
+  return out.filter(
+    (c) => wanted.has(c.id.toLowerCase()) || wanted.has(c.id.split("-").pop().toLowerCase())
+  );
+}
+
+/**
  * Every session from every available source, newest first.
  * A broken source is skipped rather than taking the whole run down with it.
  */

@@ -93,6 +93,40 @@ svg{display:block;width:100%}
 .hr2 .tk,.hr2 .du{color:var(--dim);text-align:right}
 @media(max-width:640px){.stat{border-right:0;border-bottom:1px solid var(--line)}
   .hr2{grid-template-columns:1fr 60px}.hr2 .ty,.hr2 .bar2{display:none}.wrap{padding:0 14px 60px}}
+.docwrap{display:grid;grid-template-columns:230px minmax(0,1fr);gap:26px;align-items:start}
+@media(max-width:900px){.docwrap{grid-template-columns:1fr;gap:14px}
+  .doclist{position:static!important;max-height:none!important}}
+.doclist{position:sticky;top:16px;max-height:calc(100vh - 40px);overflow:auto;
+  border:1px solid var(--line);background:var(--panel)}
+.doclist b{display:block;padding:9px 12px 5px;font-size:.57rem;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--dim);border-bottom:1px solid var(--line)}
+.doclist button{display:block;width:100%;text-align:left;background:none;border:0;
+  border-bottom:1px solid var(--grid);padding:8px 12px;cursor:pointer;
+  font-family:inherit;font-size:.7rem;color:var(--dim)}
+.doclist button:hover{color:var(--ink)}
+.doclist button[aria-current=true]{color:var(--signal);border-left:2px solid var(--signal);padding-left:10px}
+.doclist small{display:block;color:var(--faint);font-size:.58rem;margin-top:1px}
+#doc{border:1px solid var(--line);background:var(--panel);padding:20px 24px;
+  font-family:ui-serif,Georgia,serif;font-size:15px;line-height:1.65;font-variant-numeric:normal}
+#doc .src{font-family:ui-monospace,monospace;font-size:.62rem;color:var(--faint);
+  border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:16px}
+#doc h1{font-family:ui-sans-serif,system-ui,sans-serif;font-size:1.6rem;margin:0 0 12px}
+#doc h2{font-family:ui-sans-serif,system-ui,sans-serif;font-size:1.1rem;margin:26px 0 10px;
+  padding-bottom:6px;border-bottom:1px solid var(--signal)}
+#doc h3{font-family:ui-sans-serif,system-ui,sans-serif;font-size:.95rem;margin:18px 0 6px}
+#doc p{margin:0 0 11px}#doc ul,#doc ol{margin:0 0 12px;padding-left:19px}
+#doc li{margin-bottom:4px}#doc li::marker{color:var(--faint)}
+#doc code{font-family:ui-monospace,monospace;font-size:.85em;background:var(--panel-2);
+  border:1px solid var(--line);padding:0 4px}
+#doc blockquote{margin:14px 0;padding:2px 0 2px 14px;border-left:2px solid var(--alert);color:var(--dim)}
+#doc hr{border:0;border-top:1px solid var(--line);margin:22px 0}
+#doc table{border-collapse:collapse;width:100%;font-size:.82rem;margin:0 0 14px;
+  font-family:ui-monospace,monospace}
+#doc th{font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);
+  text-align:left;padding:0 12px 6px 0;border-bottom:1px solid var(--line)}
+#doc td{padding:9px 12px 9px 0;border-bottom:1px solid var(--line);vertical-align:top}
+#doc a{color:var(--signal)}
+.scroll{overflow-x:auto}
 footer{padding:34px 0 0;font-size:.62rem;color:var(--faint);line-height:1.9}
 </style>
 </head>
@@ -108,6 +142,7 @@ footer{padding:34px 0 0;font-size:.62rem;color:var(--faint);line-height:1.9}
     <button role="tab" id="t-now" aria-controls="p-now" aria-selected="true">Now</button>
     <button role="tab" id="t-graph" aria-controls="p-graph" aria-selected="false">Graph</button>
     <button role="tab" id="t-hist" aria-controls="p-hist" aria-selected="false">History</button>
+    <button role="tab" id="t-docs" aria-controls="p-docs" aria-selected="false" hidden>Docs</button>
   </nav>
 </header>
 
@@ -138,6 +173,13 @@ footer{padding:34px 0 0;font-size:.62rem;color:var(--faint);line-height:1.9}
   </div>
 </section>
 
+<section class="panel" id="p-docs" role="tabpanel" aria-labelledby="t-docs" hidden>
+  <div class="docwrap">
+    <nav class="doclist" id="doclist" aria-label="Documents"></nav>
+    <article id="doc"><div class="empty">Select a document.</div></article>
+  </div>
+</section>
+
 <footer>
   Parsed from agent transcripts already on disk. Polls every 4s. Reads local files only and sends nothing anywhere.<br>
   Tokens are input + output + cache creation. Cache reads are excluded: they re-report the whole prompt each turn.
@@ -154,7 +196,7 @@ const ago=iso=>{if(!iso)return"—";const s=Math.round((Date.now()-new Date(iso)
   return s<60?s+"s":s<3600?Math.floor(s/60)+"m":Math.floor(s/3600)+"h"};
 const shortModel=m=>!m?"unknown":m.replace(/^claude-/,"").replace(/-\d{8}$/,"");
 
-let last=null,fails=0,fingerprint=null,changedAt=Date.now();
+let last=null,fails=0,fingerprint=null,changedAt=Date.now(),openDoc=null,docsSig=null;
 const bar=document.getElementById("bar"),beacon=document.getElementById("beacon");
 const tabs=[...document.querySelectorAll('[role=tab]')];
 tabs.forEach(t=>t.addEventListener("click",()=>{
@@ -167,6 +209,73 @@ function setStatus(t,s){document.getElementById("status").textContent=t;
 function pulse(){bar.classList.remove("pulse");void bar.offsetWidth;bar.classList.add("pulse")}
 const tone=r=>r.status==="running"?"var(--signal)":/opus/.test(r.model||"")?"var(--violet)"
   :r.kind==="Explore"?"var(--cyan)":r.kind==="Plan"?"var(--warn)":"var(--cyan)";
+
+/* Minimal markdown — enough for plans, skills and agent definitions. */
+function md(src){
+  const inline=t=>esc(t)
+    .replace(/`([^`]+)`/g,"<code>$1</code>")
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" rel="noreferrer">$1</a>')
+    .replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>")
+    .replace(/(^|[^*])\*([^*]+)\*/g,"$1<em>$2</em>");
+  const out=[],lines=src.split("\n");let i=0,list=null;
+  const close=()=>{if(list){out.push(`</${list}>`);list=null}};
+  while(i<lines.length){
+    const line=lines[i];
+    if(/^\s*$/.test(line)){close();i++;continue}
+    if(/^---+\s*$/.test(line)){close();out.push("<hr>");i++;continue}
+    if(/^```/.test(line)){close();const buf=[];i++;
+      while(i<lines.length&&!/^```/.test(lines[i]))buf.push(lines[i++]);
+      i++;out.push(`<pre class="scroll"><code>${esc(buf.join("\n"))}</code></pre>`);continue}
+    const h=line.match(/^(#{1,4})\s+(.*)$/);
+    if(h){close();out.push(`<h${h[1].length}>${inline(h[2])}</h${h[1].length}>`);i++;continue}
+    if(/^\s*>/.test(line)){close();const b=[];
+      while(i<lines.length&&/^\s*>/.test(lines[i]))b.push(lines[i++].replace(/^\s*>\s?/,""));
+      out.push(`<blockquote>${md(b.join("\n"))}</blockquote>`);continue}
+    if(/^\s*\|/.test(line)){close();const rows=[];
+      while(i<lines.length&&/^\s*\|/.test(lines[i]))rows.push(lines[i++]);
+      const cells=r=>r.trim().replace(/^\||\|$/g,"").split("|").map(c=>c.trim());
+      const sep=r=>/^[\s|:-]+$/.test(r);
+      let h2="<div class='scroll'><table>";
+      rows.forEach((r,idx)=>{if(sep(r))return;
+        const tag=idx===0&&rows[1]&&sep(rows[1])?"th":"td";
+        h2+="<tr>"+cells(r).map(c=>`<${tag}>${inline(c)}</${tag}>`).join("")+"</tr>"});
+      out.push(h2+"</table></div>");continue}
+    const li=line.match(/^\s*([-*]|\d+\.)\s+(.*)$/);
+    if(li){const want=/\d/.test(li[1])?"ol":"ul";
+      if(list!==want){close();out.push(`<${want}>`);list=want}
+      out.push(`<li>${inline(li[2])}</li>`);i++;continue}
+    close();out.push(`<p>${inline(line)}</p>`);i++;
+  }
+  close();return out.join("\n");
+}
+
+function renderDocs(collections){
+  const tab=document.getElementById("t-docs");
+  // Hidden entirely when a runner keeps no documents, rather than an empty tab.
+  tab.hidden=!collections.length;
+  if(!collections.length)return;
+
+  const all=collections.flatMap(c=>c.items.map(it=>({...it,collection:c.label})));
+  if(!openDoc||!all.some(d=>d.id===openDoc))openDoc=all[0]?.id||null;
+
+  const sig=JSON.stringify(all.map(d=>[d.id,d.updatedAt]))+openDoc;
+  if(sig===docsSig)return;
+  docsSig=sig;
+
+  document.getElementById("doclist").innerHTML=collections.map(c=>
+    `<b>${esc(c.label)}</b>`+c.items.map(it=>
+      `<button data-doc="${esc(it.id)}" aria-current="${it.id===openDoc}">${esc(it.name)}
+        <small>${new Date(it.updatedAt).toLocaleDateString()} · ${Math.round(it.bytes/1024)}kB</small>
+      </button>`).join("")).join("");
+
+  document.querySelectorAll("#doclist button").forEach(b=>
+    b.addEventListener("click",()=>{openDoc=b.dataset.doc;docsSig=null;renderDocs(collections)}));
+
+  const doc=all.find(d=>d.id===openDoc);
+  document.getElementById("doc").innerHTML=doc
+    ?`<div class="src">${esc(doc.path)}</div>`+md(doc.markdown)
+    :'<div class="empty">Select a document.</div>';
+}
 
 function timeline(runs){
   const svg=document.getElementById("timeline");
@@ -253,6 +362,7 @@ function draw(d){
 
   timeline(runs);
   graph(runs,cur?cur.shared:[],"graph",false);
+  renderDocs(d.documents||[]);
 
   document.getElementById("runs").innerHTML=runs.length?runs.map(r=>`
     <article class="run">

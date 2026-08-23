@@ -25,6 +25,8 @@ if (has("help") || has("h")) {
     npx agenttrace --dir <path>    inspect another project
     npx agenttrace --json          print the data and exit
     npx agenttrace --sources       list detected agent runners
+    npx agenttrace --docs plans    show only these document collections
+                                   (default: everything found)
 
   Reads local transcripts only. Sends nothing anywhere.
 `);
@@ -32,6 +34,8 @@ if (has("help") || has("h")) {
 }
 
 const cwd = flag("dir", process.cwd());
+// Which document collections to surface. Omitted means everything discovered.
+const docs = (flag("docs", "") || "").split(",").map((s) => s.trim()).filter(Boolean);
 
 if (has("sources")) {
   const found = availableSources();
@@ -44,11 +48,11 @@ if (has("sources")) {
 }
 
 if (has("json")) {
-  console.log(JSON.stringify(buildState(cwd), null, 2));
+  console.log(JSON.stringify(buildState(cwd, { docs }), null, 2));
   process.exit(0);
 }
 
-const state = buildState(cwd);
+const state = buildState(cwd, { docs });
 if (!state.sessions.length) {
   console.error(`No agent runs found for ${cwd}.`);
   console.error(`Detected runners: ${state.sources.map((s) => s.label).join(", ") || "none"}`);
@@ -57,10 +61,15 @@ if (!state.sessions.length) {
 }
 
 const port = Number(flag("port", 4180));
-createServer({ cwd }).listen(port, () => {
+createServer({ cwd, docs }).listen(port, () => {
   const { runs, sessions, tokens } = state.lifetime;
   console.log(`\n  agenttrace  →  http://localhost:${port}\n`);
   console.log(`  ${runs} runs across ${sessions} sessions · ${tokens.toLocaleString()} tokens`);
   console.log(`  ${cwd}`);
+  const collections = state.documents || [];
+  if (collections.length) {
+    const n = collections.reduce((t, c) => t + c.items.length, 0);
+    console.log(`  ${n} documents in ${collections.map((c) => c.label).join(", ")}`);
+  }
   console.log(`\n  Local files only. Ctrl+C to stop.\n`);
 });
