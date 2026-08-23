@@ -2,6 +2,12 @@
 
 [![CI](https://github.com/Dev-Somesh/agenttrace/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Dev-Somesh/agenttrace/actions/workflows/ci.yml)
 
+> Published as **`@dev-somesh/agenttrace`**. Unrelated projects publish under
+> `@agenttrace/*` and `agent-trace`; both sit in the request path and require
+> you to have started the run through them. This one reads transcripts the
+> runner already wrote, so it works on runs that have already finished.
+
+
 **See what your coding agents actually did.**
 
 Run several agents in parallel and you lose sight of them. Which one burned the
@@ -12,7 +18,7 @@ them quietly edit the same file?
 to disk. No instrumentation, no wrapper, no account.
 
 ```bash
-npx agenttrace
+npx @dev-somesh/agenttrace
 ```
 
 Opens a local console at `http://127.0.0.1:4180` for the project you ran it in.
@@ -105,18 +111,18 @@ ask.
 ## Usage
 
 ```bash
-npx agenttrace                 # console for the current directory
-npx agenttrace --port 5000     # different port
-npx agenttrace --dir <path>    # another project
-npx agenttrace --json          # print the data and exit
-npx agenttrace --sources       # list detected agent runners
-npx agenttrace --docs plans    # show only these document collections
-npx agenttrace --since 24h     # only runs active in this window
-npx agenttrace --export out.html
+npx @dev-somesh/agenttrace                 # console for the current directory
+npx @dev-somesh/agenttrace --port 5000     # different port
+npx @dev-somesh/agenttrace --dir <path>    # another project
+npx @dev-somesh/agenttrace --json          # print the data and exit
+npx @dev-somesh/agenttrace --sources       # list detected agent runners
+npx @dev-somesh/agenttrace --docs plans    # show only these document collections
+npx @dev-somesh/agenttrace --since 24h     # only runs active in this window
+npx @dev-somesh/agenttrace --export out.html
                                # self-contained snapshot, shareable in a PR
-npx agenttrace --lan           # reachable on the same Wi-Fi (opt-in)
-npx agenttrace --tunnel        # also start ngrok / cloudflared if installed
-npx agenttrace --detach        # keep serving after the terminal closes
+npx @dev-somesh/agenttrace --lan           # reachable on the same Wi-Fi (opt-in)
+npx @dev-somesh/agenttrace --tunnel        # also start ngrok / cloudflared if installed
+npx @dev-somesh/agenttrace --detach        # keep serving after the terminal closes
 ```
 
 `--json` makes it scriptable: pipe it into `jq` for cost reporting, or assert on

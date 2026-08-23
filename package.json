@@ -1,7 +1,7 @@
 {
-  "name": "agenttrace",
+  "name": "@dev-somesh/agenttrace",
   "version": "0.1.0",
-  "description": "See what your coding agents actually did \u2014 cost, concurrency, and which files each run touched. Reads local transcripts, sends nothing anywhere.",
+  "description": "See what your coding agents actually did — cost, concurrency, and which files each run touched. Reads local transcripts, sends nothing anywhere.",
   "type": "module",
   "bin": {
     "agenttrace": "src/cli.js"
@@ -21,7 +21,8 @@
   },
   "scripts": {
     "start": "node src/cli.js",
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/*.test.js",
+    "prepublishOnly": "node --test test/*.test.js"
   },
   "keywords": [
     "ai-agents",
@@ -36,6 +37,9 @@
   ],
   "author": "Dev-Somesh <hello@someshbhardwaj.dev>",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Dev-Somesh/agenttrace.git"
