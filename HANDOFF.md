@@ -78,6 +78,15 @@ halves were badly wrong, which is why neither was noticed. An unlisted model
 must report no cost at all; a blank prompts someone to check, a wrong number
 does not. There is a test holding this.
 
+**The test glob in package.json is unquoted on purpose.** `node --test
+'test/*.test.js'` hides the pattern from the shell, and Node only expands globs
+itself from v21 — so on Node 18 and 20 it matched nothing, exited 1, and the CI
+matrix failed on every commit from the one that introduced it. It looked fine
+locally because the dev machine runs Node 23. Unquoted, the shell expands it to
+explicit paths, which every supported version accepts. Do not add the quotes
+back; if a shell ever needs them, list the files instead. (The bare directory
+form `node --test test/` is the other trap — it fails on Node 23.)
+
 **Existence checks apply only to scraped paths.** Paths a tool named explicitly
 (`file_path`) are always real. Paths pulled out of shell commands by regex can
 be invented — a truncated `package.json` produced `package.js` — so those are
