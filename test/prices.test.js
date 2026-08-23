@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { estimateCostUsd, priceFor, sumCostUsd } from "../src/prices.js";
-import { parseSince, filterSessions } from "../src/analyse.js";
+import { parseSince, filterSessions, lifetime } from "../src/analyse.js";
 import { snapshotHtml } from "../src/export.js";
 
 test("priceFor matches the longest model-family prefix", () => {
@@ -87,4 +87,23 @@ test("snapshotHtml strips documents so a PR file cannot leak user plans", () => 
     documents: [{ id: "user-plans", items: [{ markdown: "secret" }] }],
   });
   assert.ok(!html.includes("secret"));
+});
+
+// A runner that records no usage reports 0 tokens because the Run shape needs
+// a number. 0 must never be read as "free": it is not summed and not priced.
+test("a run with no recorded usage is excluded from totals, not counted as zero", () => {
+  const cursorRun = { usageRecorded: false, tokens: 0, outputTokens: 0, model: null };
+  const realRun = { tokens: 1000, outputTokens: 0, model: "claude-opus-5" };
+
+  // Priced alone, it yields no estimate at all rather than $0.
+  assert.equal(sumCostUsd([cursorRun]), null);
+
+  // Mixed with a measured run, it must not drag the cost down.
+  assert.equal(sumCostUsd([cursorRun, realRun]), sumCostUsd([realRun]));
+
+  const mixed = lifetime([
+    { runs: [cursorRun, realRun], totals: {} },
+  ]);
+  assert.equal(mixed.tokens, 1000, "unmeasured run must not be summed");
+  assert.equal(mixed.unmeasuredRuns, 1, "and the omission must be reported");
 });

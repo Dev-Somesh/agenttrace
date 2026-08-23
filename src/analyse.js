@@ -44,8 +44,14 @@ export function lifetime(sessions) {
 
   const sum = (list, key) => list.reduce((n, x) => n + (x[key] || 0), 0);
 
-  const agentTokens = sum(runs, "tokens");
-  const mainTokens = sum(main, "tokens");
+  // A runner that records no usage contributes 0, which would quietly pass as
+  // "free" inside a total. Those are excluded and counted instead, so a
+  // partial sum is visibly partial rather than silently wrong.
+  const measured = (list) => list.filter((x) => x.usageRecorded !== false);
+  const unmeasuredRuns = runs.length - measured(runs).length;
+
+  const agentTokens = sum(measured(runs), "tokens");
+  const mainTokens = sum(measured(main), "tokens");
 
   return {
     sessions: sessions.length,
@@ -54,15 +60,17 @@ export function lifetime(sessions) {
 
     // Subagents only.
     tokens: agentTokens,
-    outputTokens: sum(runs, "outputTokens"),
+    outputTokens: sum(measured(runs), "outputTokens"),
     toolCalls: sum(runs, "toolCalls"),
+    // How many runs the token figures above could not include.
+    unmeasuredRuns,
     // Summed per run, so it exceeds wall-clock wherever runs overlapped.
     agentSeconds: Math.round(sum(runs, "durationMs") / 1000),
     costUsd: sumCostUsd(runs),
 
     // The conversation driving them.
     mainTokens,
-    mainOutputTokens: sum(main, "outputTokens"),
+    mainOutputTokens: sum(measured(main), "outputTokens"),
     mainToolCalls: sum(main, "toolCalls"),
     mainTurns: sum(main, "turns"),
     mainCostUsd: sumCostUsd(main),

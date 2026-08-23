@@ -50,6 +50,10 @@
  * @property {string|null} model
  * @property {string|null} effort
  * @property {"running"|"finished"} status
+ * @property {boolean} [usageRecorded]  False when the runner's transcripts carry
+ *   no usage data at all. Such a run reports 0 tokens because the shape needs a
+ *   number, but 0 means "unmeasured", not "free" — readers must not sum it or
+ *   price it. Omitted means true.
  * @property {number} tokens          Consumed: input + output + cache creation.
  * @property {number} outputTokens
  * @property {number} [cacheWriteTokens]  Priced above input rate; already in `tokens`.

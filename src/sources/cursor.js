@@ -158,6 +158,7 @@ function parseRun(file, repoRoot, { depth, kind } = {}) {
     model,
     effort: null,
     status: statusFromLastWrite(last),
+    usageRecorded: false,
     tokens: 0,
     outputTokens: 0,
     cacheWriteTokens: 0,
@@ -221,6 +222,7 @@ export const cursor = {
         lastActivityAt: runs.map((r) => r.lastActivityAt).filter(Boolean).sort().pop() || null,
         runs,
         totals: {
+          usageRecorded: false,
           tokens: 0,
           outputTokens: 0,
           cacheWriteTokens: 0,

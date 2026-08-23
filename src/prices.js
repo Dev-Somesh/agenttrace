@@ -106,6 +106,9 @@ export function sumCostUsd(runs) {
   let total = 0;
   let known = 0;
   for (const r of runs) {
+    // No usage recorded means no basis for a price. Charging $0 would make an
+    // unmeasured run look free rather than unmeasured.
+    if (r.usageRecorded === false) continue;
     const n =
       r.costUsd ??
       estimateCostUsd(r.tokens, r.outputTokens, r.model, {

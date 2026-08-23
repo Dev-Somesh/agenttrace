@@ -244,6 +244,10 @@ footer{padding:34px 0 0;font-size:.62rem;color:var(--faint);line-height:1.9}
 <script>
 const LOADED_UI="__UI_VERSION__";
 const fmt=n=>n==null?"—":n.toLocaleString("en-US");
+// A runner that records no usage reports 0 because the shape needs a number.
+// 0 reads as "free"; "—" reads as "unmeasured", which is what it is.
+const measured=x=>!!x&&x.usageRecorded!==false;
+const tok=(x,k)=>measured(x)?fmt(x[k]):"—";
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const dur=ms=>{if(ms==null)return"—";const s=Math.round(ms/1000);
   return s<60?s+"s":Math.floor(s/60)+"m "+String(s%60).padStart(2,"0")+"s"};
@@ -389,7 +393,7 @@ function timeline(runs){
     s+=`<rect x="${x1}" y="${y-5}" width="${x2-x1}" height="10" fill="${c}" opacity="${r.status==="running"?".95":".55"}"/>`;
     s+=`<circle cx="${x1}" cy="${y}" r="3" fill="${c}"/>`;
     if(r.status==="running")s+=`<circle cx="${x2}" cy="${y}" r="4" fill="none" stroke="${c}"><animate attributeName="r" values="4;9" dur="1.6s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;0" dur="1.6s" repeatCount="indefinite"/></circle>`;
-    s+=`<text x="${x2+8}" y="${y+3.5}" fill="var(--dim)" font-size="9">${fmt(r.tokens)}</text>`});
+    s+=`<text x="${x2+8}" y="${y+3.5}" fill="var(--dim)" font-size="9">${tok(r,"tokens")}</text>`});
   svg.setAttribute("viewBox",`0 0 ${W} ${H}`);svg.setAttribute("height",H);svg.innerHTML=s;
 }
 
@@ -413,7 +417,7 @@ function graph(runs,shared,el,compact){
     s+=`<rect x="${aX}" y="${y-h/2}" width="3" height="${h}" fill="${c}"/>`;
     const max=Math.floor((aW-104)/5.6),nm=(r.name||"").length>max?(r.name||"").slice(0,max-1)+"…":(r.name||"");
     s+=`<text x="${aX+11}" y="${y+3.5}" fill="var(--ink)" font-size="10">${esc(nm)}</text>`;
-    s+=`<text x="${aX+aW-9}" y="${y+3.5}" fill="var(--dim)" font-size="8.5" text-anchor="end">${fmt(r.tokens)}</text>`});
+    s+=`<text x="${aX+aW-9}" y="${y+3.5}" fill="var(--dim)" font-size="8.5" text-anchor="end">${tok(r,"tokens")}</text>`});
   hubs.forEach((h,r)=>{const y=ay(r);
     s+=`<circle cx="${fX-10}" cy="${y}" r="2.5" fill="var(--signal)"/>`;
     s+=`<text x="${fX-20}" y="${y+3.5}" fill="var(--faint)" font-size="9" text-anchor="end">${h.runs.length}×</text>`;
@@ -541,10 +545,11 @@ function draw(d){
       <div class="v" style="color:${running?"var(--signal)":"var(--dim)"}">${running?running+" running":"Idle"}</div>
       <span class="s">${running?"of "+runs.length+(many?" across "+now.length+" sessions":" this session"):"quiet for "+ago(lastWrite)}</span></div>
     <div class="stat"><span class="k">This conversation</span>
-      <div class="v" style="color:${mt.status==="running"?"var(--signal)":"inherit"}">${fmt(mt.tokens)}</div>
-      <span class="s">${fmt(mt.toolCalls)} tool calls · ${fmt(mt.turns)} turns${mt.costUsd!=null?` · ~${money(mt.costUsd)}`:""}</span></div>
-    <div class="stat"><span class="k">Delegated to runs</span><div class="v">${fmt(runs.reduce((n,r)=>n+r.tokens,0))}</div>
-      <span class="s">${runs.length} runs · peak ${c.peak} concurrent${(()=>{const t=runs.reduce((n,r)=>n+(r.costUsd||0),0);return t?` · ~${money(t)}`:"";})()}</span></div>
+      <div class="v" style="color:${mt.status==="running"?"var(--signal)":"inherit"}">${tok(mt,"tokens")}</div>
+      <span class="s">${fmt(mt.toolCalls)} tool calls · ${fmt(mt.turns)} turns${measured(mt)&&mt.costUsd!=null?` · ~${money(mt.costUsd)}`:""}</span></div>
+    <div class="stat"><span class="k">Delegated to runs</span>
+      <div class="v">${(()=>{const m=runs.filter(measured);return m.length?fmt(m.reduce((n,r)=>n+r.tokens,0)):"—";})()}</div>
+      <span class="s">${runs.length} runs · peak ${c.peak} concurrent${(()=>{const t=runs.filter(measured).reduce((n,r)=>n+(r.costUsd||0),0);return t?` · ~${money(t)}`:"";})()}${(()=>{const u=runs.length-runs.filter(measured).length;return u?` · ${u} unmeasured`:"";})()}</span></div>
     <div class="stat"><span class="k">Context now</span><div class="v">${fmt(mt.contextNow)}</div>
       <span class="s">most recent prompt</span></div>
     <div class="stat"><span class="k">Parallelism</span><div class="v">${overlapPct}%</div>
@@ -558,7 +563,8 @@ function draw(d){
     `a run stays listed after it finishes, so <b>Now</b> is the only live figure. `+
     (many?`These sessions are from different runners on the same project; a shared file here is observed contact, not a declared team. `:``)+
     `Completion is inferred from write recency: transcripts carry no terminal marker, so a run quiet for 90s reads as finished. `+
-    `Cache reads are left out of token counts — they re-report the whole prompt each turn — but they are billed, so cost includes them.`;
+    `Cache reads are left out of token counts — they re-report the whole prompt each turn — but they are billed, so cost includes them. `+
+    `A runner whose transcripts record no usage shows <b>—</b>, not 0: those runs are unmeasured, not free, and are left out of totals rather than counted as nothing.`;
 
   const hint=document.getElementById("tlhint");
   const srcNote=many?` ${now.length} sessions across ${(d.across||[]).map(x=>x.sourceLabel).join(" and ")}.`:" ";
@@ -581,8 +587,8 @@ function draw(d){
         <span class="rid">${esc(r.id.slice(0,12))}</span></div>
       <div class="kv">
         <div><span class="k">Effort</span><span class="v">${esc(r.effort||"—")}</span></div>
-        <div><span class="k">Tokens</span><span class="v">${fmt(r.tokens)}${r.costUsd!=null?` · ~${money(r.costUsd)}`:""}</span></div>
-        <div><span class="k">Generated</span><span class="v">${fmt(r.outputTokens)}</span></div>
+        <div><span class="k">Tokens</span><span class="v">${tok(r,"tokens")}${measured(r)&&r.costUsd!=null?` · ~${money(r.costUsd)}`:""}</span></div>
+        <div><span class="k">Generated</span><span class="v">${tok(r,"outputTokens")}</span></div>
         <div><span class="k">Tool calls</span><span class="v">${fmt(r.toolCalls)}</span></div>
         <div><span class="k">Turns</span><span class="v">${fmt(r.turns)}</span></div>
         <div><span class="k">Duration</span><span class="v">${dur(r.durationMs)}</span></div>
@@ -613,19 +619,19 @@ function draw(d){
     <div class="stat"><span class="k">Agent time</span><div class="v">${Math.round(L.agentSeconds/60)}m</div>
       <span class="s">summed, not wall-clock</span></div>`;
 
-  const peak=Math.max(1,...d.sessions.flatMap(s=>s.runs.map(r=>r.tokens)));
+  const peak=Math.max(1,...d.sessions.flatMap(s=>s.runs.filter(measured).map(r=>r.tokens)));
   const list=document.getElementById("hist");
   list.innerHTML=d.sessions.map(s=>`
     <div class="hs">
       <div class="hh"><b>${esc(s.sourceLabel||"")} · ${esc(String(s.startedAt).slice(0,16).replace("T"," "))}</b>
         ${s.id===(cur&&cur.id)?'<span class="tag running">current</span>':now.some(n=>n.id===s.id)?'<span class="tag running">now</span>':""}
-        <span class="m">${esc(s.id.slice(0,8))} · ${fmt((s.totals||{}).tokens)} conversation · ${s.runs.length} runs, ${fmt(s.runs.reduce((n,r)=>n+r.tokens,0))} delegated${s.runs.length>1?` · peak ${s.concurrency.peak}`:""}</span></div>
+        <span class="m">${esc(s.id.slice(0,8))} · ${tok(s.totals||{},"tokens")} conversation · ${s.runs.length} runs, ${(()=>{const m=s.runs.filter(measured);return m.length?fmt(m.reduce((n,r)=>n+r.tokens,0)):"—";})()} delegated${s.runs.length>1?` · peak ${s.concurrency.peak}`:""}</span></div>
       ${s.shared.length?`<div style="margin:2px 0 10px;padding:6px 0;border-top:1px solid var(--grid);border-bottom:1px solid var(--grid)"><svg data-s="${esc(s.id)}"></svg></div>`:""}
       ${!s.runs.length?'<div class="hr2"><span class="nm" style="color:var(--dim)">No subagents — the main agent did this session itself</span></div>':""}
       ${s.runs.map(r=>`<div class="hr2"><span class="nm">${esc(r.name)}</span>
         <span class="ty">${esc(r.kind||r.sourceLabel||"—")}</span>
-        <span class="bar2"><i style="width:${Math.max(2,r.tokens/peak*100)}%;background:${tone(r)}"></i></span>
-        <span class="tk">${fmt(r.tokens)}</span><span class="du">${dur(r.durationMs)}</span></div>`).join("")}
+        <span class="bar2"><i style="width:${measured(r)?Math.max(2,r.tokens/peak*100):0}%;background:${tone(r)}"></i></span>
+        <span class="tk">${tok(r,"tokens")}</span><span class="du">${dur(r.durationMs)}</span></div>`).join("")}
     </div>`).join("")||'<div class="empty">No history yet.</div>';
   for(const s of d.sessions){
     if(!s.shared.length)continue;
