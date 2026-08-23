@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { sharedFiles, ownFiles, lifetime, concurrency } from "../src/analyse.js";
+import { sharedFiles, ownFiles, lifetime, concurrency, nowSessions, modelsInPlay } from "../src/analyse.js";
 
 const run = (id, over = {}) => ({
   id, name: id, kind: null, model: null, status: "finished",
@@ -112,4 +112,45 @@ test("runs without timestamps are ignored rather than crashing", () => {
   const c = concurrency([run("a"), run("b")]);
   assert.equal(c.peak, 0);
   assert.equal(c.overlapMs, 0);
+});
+
+const session = (id, sourceId, runs, over = {}) => ({
+  id, sourceId, sourceLabel: sourceId, runs, startedAt: null, lastActivityAt: null, ...over,
+});
+
+test("nowSessions keeps every live session, not only the newest", () => {
+  const a = session("old-live", "runner-a", [run("a1", { status: "running" })]);
+  const b = session("new-live", "runner-b", [run("b1", { status: "running" })]);
+  const now = nowSessions([b, a]);
+  assert.equal(now.length, 2);
+  assert.deepEqual(now.map((s) => s.id).sort(), ["new-live", "old-live"]);
+});
+
+test("nowSessions adds the newest idle session from a runner that is not live", () => {
+  const live = session("cc-live", "alpha", [run("x", { status: "running", model: "m1" })]);
+  const idleNew = session("cu-new", "beta", [run("y", { status: "finished", model: "m2" })]);
+  const idleOld = session("cu-old", "beta", [run("z", { status: "finished", model: "m3" })]);
+  const now = nowSessions([idleNew, live, idleOld]);
+  assert.equal(now.length, 2);
+  assert.ok(now.some((s) => s.id === "cc-live"));
+  assert.ok(now.some((s) => s.id === "cu-new"));
+  assert.ok(!now.some((s) => s.id === "cu-old"));
+});
+
+test("modelsInPlay groups by runner and recorded model, and does not invent one", () => {
+  const now = [
+    session("s1", "alpha", [
+      run("a", { status: "running", model: "opus" }),
+      run("b", { status: "finished", model: "opus" }),
+    ]),
+    session("s2", "beta", [run("c", { status: "running", model: null })]),
+  ];
+  const rows = modelsInPlay(now);
+  assert.equal(rows.length, 2);
+  const opus = rows.find((r) => r.model === "opus");
+  const unknown = rows.find((r) => r.model == null);
+  assert.equal(opus.running, 1);
+  assert.equal(opus.runs, 2);
+  assert.equal(unknown.sourceId, "beta");
+  assert.equal(unknown.running, 1);
 });
