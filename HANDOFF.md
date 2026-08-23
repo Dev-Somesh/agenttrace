@@ -79,9 +79,12 @@ was found.
 
 ## What to build next, roughly in order
 
-1. **Tests.** There are none. The parsing in `claude-code.js` and the maths in
-   `analyse.js` are pure functions over fixtures — start there. `concurrency()`
-   in particular has an interval-sweep that deserves a test.
+1. ~~**Tests.**~~ Done for `analyse.js` — 12 tests, run by CI on Node 18/20/22.
+   Writing them immediately caught a wrong assumption: back-to-back runs must
+   report `peak: 1`, not 2, because a run ending exactly as another starts was
+   never concurrent. The sweep already handled it; the test author did not.
+   **Still untested:** the transcript parsing in `claude-code.js`, which needs
+   fixture `.jsonl` files.
 
 2. **A second source.** The interface is only proven by one implementation.
    Cursor, Aider, or OpenAI Codex CLI would each validate or break the shape.

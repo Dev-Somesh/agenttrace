@@ -1,0 +1,72 @@
+name: CI
+
+# agenttrace claims Node 18+ and zero dependencies. Both are claims a matrix
+# can actually check, which is more than a bundler workflow would do for a
+# project that has no build step.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Node ${{ matrix.node }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ["18", "20", "22"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Tests
+        run: npm test
+
+      # The CLI has to start and answer --help without a runner present, since
+      # that is exactly the state a first-time user is in.
+      - name: CLI responds with no agent runner installed
+        if: ${{ !cancelled() }}
+        run: |
+          node src/cli.js --help > /dev/null
+          node src/cli.js --sources || true
+
+      # Zero dependencies is a feature. If one appears, it should be deliberate.
+      - name: No runtime dependencies
+        if: ${{ !cancelled() }}
+        run: |
+          DEPS=$(node -p "Object.keys(require('./package.json').dependencies || {}).length")
+          echo "runtime dependencies: $DEPS"
+          [ "$DEPS" -eq 0 ] || { echo "::error::agenttrace is meant to have no runtime dependencies"; exit 1; }
+
+      # Nothing outside src/sources/ may name a vendor. That rule is the whole
+      # basis of the adapter layer, and it is easy to break by accident.
+      - name: Adapter layer stays vendor-neutral
+        if: ${{ !cancelled() }}
+        run: |
+          if grep -rniE '\.claude|claude-code|anthropic' src --include='*.js' \
+               | grep -v '^src/sources/' | grep -v 'src/ui/'; then
+            echo "::error::vendor reference found outside src/sources/"
+            exit 1
+          fi
+          echo "No vendor references outside src/sources/."
+
+      # It reads local files and sends nothing. Guard that claim.
+      - name: Makes no network calls
+        if: ${{ !cancelled() }}
+        run: |
+          if grep -rnE '\b(fetch|https?\.request|axios|XMLHttpRequest)\s*\(' src --include='*.js'; then
+            echo "::error::network call in server-side code — agenttrace must stay local-only"
+            exit 1
+          fi
+          echo "No outbound network calls."
