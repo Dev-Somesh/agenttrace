@@ -1,3 +1,6 @@
+import fs from "node:fs";
+import path from "node:path";
+
 /**
  * Approximate USD per million tokens, by model family.
  *
@@ -47,12 +50,80 @@ export const PRICES = {
 export const CACHE_WRITE_MULTIPLIER = 1.25;
 export const CACHE_READ_MULTIPLIER = 0.1;
 
+/**
+ * Rates the reader supplied, merged over the table above.
+ *
+ * The README tells you to edit `src/prices.js` to match what you pay. Under
+ * `npx` that file lives in a node_modules cache, so the edit is thrown away on
+ * the next run — the one documented modification of this tool did not survive.
+ * A price block in `agenttrace.json` beside the project does survive, and it
+ * is the reader's own file rather than one inside the package.
+ */
+let overrides = {};
+
+/** Everything in effect: shipped defaults with the reader's rates on top. */
+export function effectivePrices() {
+  return { ...PRICES, ...overrides };
+}
+
+export function setPriceOverrides(table) {
+  overrides = table && typeof table === "object" ? table : {};
+}
+
+/**
+ * Read a `prices` block from `<cwd>/agenttrace.json`, if there is one.
+ *
+ * Returns any complaint rather than throwing. A malformed config that silently
+ * did nothing would leave every figure quietly wrong with the console
+ * reporting itself healthy, which is the failure this tool exists to catch —
+ * so the caller surfaces the message alongside source errors.
+ */
+export function loadPriceOverrides(cwd) {
+  const file = path.join(cwd || ".", "agenttrace.json");
+  let raw;
+  try {
+    raw = fs.readFileSync(file, "utf8");
+  } catch {
+    return { applied: 0, problem: null }; // no config is the normal case
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    return { applied: 0, problem: `agenttrace.json is not valid JSON: ${err.message}` };
+  }
+
+  const table = parsed?.prices;
+  if (table == null) return { applied: 0, problem: null };
+  if (typeof table !== "object" || Array.isArray(table)) {
+    return { applied: 0, problem: "agenttrace.json: `prices` must be an object of model → rate" };
+  }
+
+  const good = {};
+  const bad = [];
+  for (const [key, rate] of Object.entries(table)) {
+    if (rate && typeof rate.input === "number" && typeof rate.output === "number") {
+      good[key.toLowerCase()] = { input: rate.input, output: rate.output };
+    } else {
+      bad.push(key);
+    }
+  }
+  setPriceOverrides(good);
+  return {
+    applied: Object.keys(good).length,
+    problem: bad.length
+      ? `agenttrace.json: ignored ${bad.join(", ")} — each needs numeric input and output`
+      : null,
+  };
+}
+
 export function priceFor(model) {
   if (!model || typeof model !== "string") return null;
   const id = model.toLowerCase();
   let best = null;
   let bestLen = 0;
-  for (const [key, rate] of Object.entries(PRICES)) {
+  for (const [key, rate] of Object.entries(effectivePrices())) {
     if (id.includes(key) && key.length > bestLen) {
       best = rate;
       bestLen = key.length;

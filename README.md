@@ -63,8 +63,18 @@ it. The four classes are priced separately; the headline is unchanged.
 **Agent time is summed per run**, so it exceeds wall-clock wherever runs
 overlapped. The UI says so rather than implying elapsed duration.
 
-**Dollar figures come from a local price table**, not a live feed. Edit
-`src/prices.js` to match what you pay. Every current model needs its own entry:
+**Dollar figures come from a local price table**, not a live feed. Put the
+rates you actually pay in an `agenttrace.json` beside your project:
+
+```json
+{ "prices": { "claude-opus-5": { "input": 2, "output": 9 } } }
+```
+
+Anything you list replaces the shipped rate; anything you leave out keeps it,
+and a model the table has never heard of can be added the same way. A config
+that cannot be read is reported on the page rather than ignored. (Editing
+`src/prices.js` works too, but under `npx` that file lives in a cache and your
+edit is gone on the next run.) Every current model needs its own entry:
 matching is by longest prefix, so a generic family entry will quietly price a
 newer model at an older model's rate. An unlisted model shows no cost rather
 than an invented one.

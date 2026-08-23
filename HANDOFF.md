@@ -78,6 +78,15 @@ halves were badly wrong, which is why neither was noticed. An unlisted model
 must report no cost at all; a blank prompts someone to check, a wrong number
 does not. There is a test holding this.
 
+**Reader-supplied prices live in `agenttrace.json`, not in `src/prices.js`.**
+The README used to say to edit `src/prices.js`. Under `npx` that file sits in a
+node_modules cache, so the single documented modification of this tool was
+discarded on the next run — and quietly, leaving every dollar figure wrong. A
+`prices` block in the project's own `agenttrace.json` is merged over the
+shipped table at load. A config that cannot be parsed is pushed to `problems`
+and shown, never swallowed: wrong money with a console reporting itself healthy
+is the failure mode this whole tool exists to catch.
+
 **The test glob in package.json is unquoted on purpose.** `node --test
 'test/*.test.js'` hides the pattern from the shell, and Node only expands globs
 itself from v21 — so on Node 18 and 20 it matched nothing, exited 1, and the CI

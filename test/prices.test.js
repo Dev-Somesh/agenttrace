@@ -107,3 +107,42 @@ test("a run with no recorded usage is excluded from totals, not counted as zero"
   assert.equal(mixed.tokens, 1000, "unmeasured run must not be summed");
   assert.equal(mixed.unmeasuredRuns, 1, "and the omission must be reported");
 });
+
+// The README tells the reader to edit src/prices.js. Under npx that file is in
+// a node_modules cache and the edit is lost on the next run, so the one
+// documented modification of this tool did not survive. A price block beside
+// the project does.
+test("agenttrace.json overrides the shipped rates", async (t) => {
+  const fs = await import("node:fs");
+  const os = await import("node:os");
+  const path = await import("node:path");
+  const { loadPriceOverrides, priceFor, setPriceOverrides } = await import("../src/prices.js");
+  t.after(() => setPriceOverrides({}));
+
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "at-prices-"));
+
+  // No config at all is the normal case, and must not complain.
+  assert.deepEqual(loadPriceOverrides(dir), { applied: 0, problem: null });
+  assert.equal(priceFor("claude-opus-5").input, 5, "defaults still apply");
+
+  // A negotiated rate replaces the shipped one; an unlisted model can be added.
+  fs.writeFileSync(
+    path.join(dir, "agenttrace.json"),
+    JSON.stringify({ prices: { "claude-opus-5": { input: 2, output: 9 }, "in-house-7": { input: 0, output: 0 } } })
+  );
+  assert.equal(loadPriceOverrides(dir).applied, 2);
+  assert.equal(priceFor("claude-opus-5").input, 2, "reader's rate wins");
+  assert.equal(priceFor("claude-sonnet-5").input, 3, "untouched models keep the default");
+  assert.deepEqual(priceFor("in-house-7"), { input: 0, output: 0 });
+
+  // Broken config must be reported, never silently ignored.
+  fs.writeFileSync(path.join(dir, "agenttrace.json"), "{ not json");
+  assert.match(loadPriceOverrides(dir).problem, /not valid JSON/);
+
+  fs.writeFileSync(path.join(dir, "agenttrace.json"), JSON.stringify({ prices: { "x-1": { input: "free" } } }));
+  const bad = loadPriceOverrides(dir);
+  assert.equal(bad.applied, 0);
+  assert.match(bad.problem, /numeric input and output/);
+
+  fs.rmSync(dir, { recursive: true, force: true });
+});

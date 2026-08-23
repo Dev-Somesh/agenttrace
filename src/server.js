@@ -15,7 +15,7 @@ import {
   nowSessions,
   modelsInPlay,
 } from "./analyse.js";
-import { estimateCostUsd } from "./prices.js";
+import { estimateCostUsd, loadPriceOverrides } from "./prices.js";
 import { snapshotHtml } from "./export.js";
 import { accessInfo, projectName } from "./access.js";
 import { startTunnel } from "./tunnel.js";
@@ -110,6 +110,12 @@ export function pickCurrent(sessions) {
 
 export function buildState(cwd, { docs = null, since = null, access = null } = {}) {
   const { sessions: found, problems } = collectSessions(cwd);
+
+  // Rates the reader supplied beside their project, applied before anything is
+  // priced. A broken config is reported next to source errors rather than
+  // ignored — wrong money with a healthy-looking console is the worse outcome.
+  const priceConfig = loadPriceOverrides(cwd);
+  if (priceConfig.problem) problems.push(priceConfig.problem);
   const sinceMs = parseSince(since);
   const sessions = filterSessions(found, sinceMs);
   const labels = new Map(availableSources().map((s) => [s.id, s.label]));
