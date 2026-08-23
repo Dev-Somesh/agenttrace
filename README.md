@@ -50,16 +50,22 @@ you can see what it is for. `--docs plans,skills` narrows it.
 subagents hides most of the activity in a session where the main agent did the
 work itself; summing them hides the split. Both are shown.
 
-**Cache reads are excluded from token totals.** They re-report the entire prompt
-on every turn, so summing them across a session counts the same context dozens
-of times. Totals are `input + output + cache_creation`.
+**Cache reads are excluded from token totals, but included in cost.** They
+re-report the entire prompt on every turn, so summing them across a session
+counts the same context dozens of times — the token headline is
+`input + output + cache_creation`. They are still billed, at about a tenth of
+the input rate on far more tokens, so leaving them out of the dollar figure
+understated real spend. Cache writes are billed above the input rate, not at
+it. The four classes are priced separately; the headline is unchanged.
 
 **Agent time is summed per run**, so it exceeds wall-clock wherever runs
 overlapped. The UI says so rather than implying elapsed duration.
 
 **Dollar figures come from a local price table**, not a live feed. Edit
-`src/prices.js` to match what you pay. Unknown models show no cost rather than
-an invented rate.
+`src/prices.js` to match what you pay. Every current model needs its own entry:
+matching is by longest prefix, so a generic family entry will quietly price a
+newer model at an older model's rate. An unlisted model shows no cost rather
+than an invented one.
 
 **Completion is inferred, not asserted.** Transcripts carry no terminal marker,
 so a run quiet for 90 seconds reads as finished. The interface states this.

@@ -73,6 +73,8 @@ function parseRun(file, repoRoot) {
   let effort = null;
   let tokens = 0;
   let outputTokens = 0;
+  let cacheWriteTokens = 0;
+  let cacheReadTokens = 0;
   let toolCalls = 0;
   let turns = 0;
   let first = null;
@@ -91,6 +93,8 @@ function parseRun(file, repoRoot) {
     if (msg.usage) {
       tokens += consumedTokens(msg.usage);
       outputTokens += msg.usage.output_tokens || 0;
+      cacheWriteTokens += msg.usage.cache_creation_input_tokens || 0;
+      cacheReadTokens += msg.usage.cache_read_input_tokens || 0;
     }
     if (rec.type === "assistant") turns++;
     if (Array.isArray(msg.content)) {
@@ -123,6 +127,8 @@ function parseRun(file, repoRoot) {
     status: statusFromLastWrite(last),
     tokens,
     outputTokens,
+    cacheWriteTokens,
+    cacheReadTokens,
     toolCalls,
     turns,
     startedAt: first,
@@ -140,6 +146,8 @@ function parseRun(file, repoRoot) {
 function sessionTotals(file) {
   let tokens = 0;
   let outputTokens = 0;
+  let cacheWriteTokens = 0;
+  let cacheReadTokens = 0;
   let toolCalls = 0;
   let turns = 0;
   let contextNow = 0;
@@ -164,13 +172,19 @@ function sessionTotals(file) {
     if (!u) continue;
     tokens += consumedTokens(u);
     outputTokens += u.output_tokens || 0;
+    cacheWriteTokens += u.cache_creation_input_tokens || 0;
+    cacheReadTokens += u.cache_read_input_tokens || 0;
     // Context is the most recent prompt, not a running total.
     contextNow =
       (u.input_tokens || 0) +
       (u.cache_read_input_tokens || 0) +
       (u.cache_creation_input_tokens || 0);
   }
-  return { tokens, outputTokens, toolCalls, turns, contextNow, model, startedAt: first, lastActivityAt: last };
+  return {
+    tokens, outputTokens, cacheWriteTokens, cacheReadTokens,
+    toolCalls, turns, contextNow, model,
+    startedAt: first, lastActivityAt: last,
+  };
 }
 
 export const claudeCode = {

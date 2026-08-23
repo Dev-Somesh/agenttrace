@@ -160,6 +160,8 @@ function parseRun(file, repoRoot, { depth, kind } = {}) {
     status: statusFromLastWrite(last),
     tokens: 0,
     outputTokens: 0,
+    cacheWriteTokens: 0,
+    cacheReadTokens: 0,
     toolCalls,
     turns,
     startedAt: first,
@@ -221,6 +223,8 @@ export const cursor = {
         totals: {
           tokens: 0,
           outputTokens: 0,
+          cacheWriteTokens: 0,
+          cacheReadTokens: 0,
           toolCalls: runs.reduce((n, r) => n + r.toolCalls, 0),
           contextNow: 0,
           model: runs.map((r) => r.model).find(Boolean) || null,

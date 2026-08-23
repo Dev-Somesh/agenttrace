@@ -542,9 +542,9 @@ function draw(d){
       <span class="s">${running?"of "+runs.length+(many?" across "+now.length+" sessions":" this session"):"quiet for "+ago(lastWrite)}</span></div>
     <div class="stat"><span class="k">This conversation</span>
       <div class="v" style="color:${mt.status==="running"?"var(--signal)":"inherit"}">${fmt(mt.tokens)}</div>
-      <span class="s">${fmt(mt.toolCalls)} tool calls · ${fmt(mt.turns)} turns</span></div>
+      <span class="s">${fmt(mt.toolCalls)} tool calls · ${fmt(mt.turns)} turns${mt.costUsd!=null?` · ~${money(mt.costUsd)}`:""}</span></div>
     <div class="stat"><span class="k">Delegated to runs</span><div class="v">${fmt(runs.reduce((n,r)=>n+r.tokens,0))}</div>
-      <span class="s">${runs.length} runs · peak ${c.peak} concurrent</span></div>
+      <span class="s">${runs.length} runs · peak ${c.peak} concurrent${(()=>{const t=runs.reduce((n,r)=>n+(r.costUsd||0),0);return t?` · ~${money(t)}`:"";})()}</span></div>
     <div class="stat"><span class="k">Context now</span><div class="v">${fmt(mt.contextNow)}</div>
       <span class="s">most recent prompt</span></div>
     <div class="stat"><span class="k">Parallelism</span><div class="v">${overlapPct}%</div>
@@ -557,7 +557,8 @@ function draw(d){
     `Summed from transcripts on disk. Counts are cumulative — `+
     `a run stays listed after it finishes, so <b>Now</b> is the only live figure. `+
     (many?`These sessions are from different runners on the same project; a shared file here is observed contact, not a declared team. `:``)+
-    `Completion is inferred from write recency: transcripts carry no terminal marker, so a run quiet for 90s reads as finished.`;
+    `Completion is inferred from write recency: transcripts carry no terminal marker, so a run quiet for 90s reads as finished. `+
+    `Cache reads are left out of token counts — they re-report the whole prompt each turn — but they are billed, so cost includes them.`;
 
   const hint=document.getElementById("tlhint");
   const srcNote=many?` ${now.length} sessions across ${(d.across||[]).map(x=>x.sourceLabel).join(" and ")}.`:" ";

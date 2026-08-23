@@ -52,6 +52,10 @@
  * @property {"running"|"finished"} status
  * @property {number} tokens          Consumed: input + output + cache creation.
  * @property {number} outputTokens
+ * @property {number} [cacheWriteTokens]  Priced above input rate; already in `tokens`.
+ * @property {number} [cacheReadTokens]   Priced far below input rate; NOT in `tokens`,
+ *   because summing cache reads double-counts the prompt. Billed all the same,
+ *   so cost uses it even though the token headline does not.
  * @property {number} toolCalls
  * @property {number} turns
  * @property {string|null} startedAt

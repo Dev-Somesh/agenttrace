@@ -47,17 +47,30 @@ export function buildState(cwd, { docs = null, since = null, access = null } = {
   const enriched = sessions.map((s) => {
     const shared = sharedFiles(s.runs);
     const sourceLabel = labels.get(s.sourceId) || s.sourceId;
+    const totals = s.totals || {};
     return {
       ...s,
       sourceLabel,
       shared,
       concurrency: concurrency(s.runs),
+      // The main conversation is priced too. Pricing only the runs reported
+      // the cost of what a session delegated and none of what it did itself.
+      totals: {
+        ...totals,
+        costUsd: estimateCostUsd(totals.tokens, totals.outputTokens, totals.model, {
+          write: totals.cacheWriteTokens,
+          read: totals.cacheReadTokens,
+        }),
+      },
       runs: s.runs.map((r) => ({
         ...r,
         sourceId: s.sourceId,
         sourceLabel,
         own: ownFiles(r, shared),
-        costUsd: estimateCostUsd(r.tokens, r.outputTokens, r.model),
+        costUsd: estimateCostUsd(r.tokens, r.outputTokens, r.model, {
+          write: r.cacheWriteTokens,
+          read: r.cacheReadTokens,
+        }),
       })),
     };
   });

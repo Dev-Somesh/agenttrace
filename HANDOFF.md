@@ -57,10 +57,26 @@ vendor. `analyse.js`, `server.js` and the UI work only against the normalised
 
 ## Decisions already made — do not silently reverse these
 
-**Cache reads are excluded from token totals.** They re-report the whole prompt
-each turn; summing them counts the same context dozens of times. An early
-version did, and reported 382% of a token budget. Totals are
-`input + output + cache_creation`.
+**Cache reads are excluded from token totals — and included in cost.** They
+re-report the whole prompt each turn; summing them counts the same context
+dozens of times. An early version did, and reported 382% of a token budget.
+The token headline is `input + output + cache_creation` and stays that way.
+
+Cost is a different question, and answering it with that same number was
+wrong. Cache reads are billed. On this project's own session the headline was
+505k tokens against **21.2M cache reads**: pricing them at zero left roughly
+two thirds of real spend invisible. The four token classes are now priced
+separately — cache writes at 1.25x input, cache reads at 0.1x — while the
+headline is untouched. Do not "simplify" that back into one number; they
+answer different questions.
+
+**Every current model needs its own entry in `src/prices.js`.** Matching is by
+longest prefix. A generic `claude-opus` entry priced `claude-opus-5` at the
+older family's rate — three times too high. Combined with unpriced cache
+reads, the two errors nearly cancelled: the total looked plausible while both
+halves were badly wrong, which is why neither was noticed. An unlisted model
+must report no cost at all; a blank prompts someone to check, a wrong number
+does not. There is a test holding this.
 
 **Existence checks apply only to scraped paths.** Paths a tool named explicitly
 (`file_path`) are always real. Paths pulled out of shell commands by regex can

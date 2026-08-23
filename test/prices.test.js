@@ -6,9 +6,36 @@ import { snapshotHtml } from "../src/export.js";
 
 test("priceFor matches the longest model-family prefix", () => {
   assert.equal(priceFor("claude-sonnet-4-20250514").input, 3);
-  assert.equal(priceFor("claude-opus-4.5").input, 15);
+  assert.equal(priceFor("claude-opus-4-1").input, 15);
   assert.equal(priceFor("unknown-model-9"), null);
   assert.equal(priceFor(null), null);
+});
+
+// The bug this guards: "claude-opus-5" contains "claude-opus", so a generic
+// entry for the older family priced the current model at three times its
+// rate. Every current model needs its own key, and no generic fallback may
+// stand in for one — an unlisted model must report nothing at all.
+test("a current model is never priced by an older family prefix", () => {
+  assert.equal(priceFor("claude-opus-5").input, 5);
+  assert.equal(priceFor("claude-opus-5").output, 25);
+  assert.equal(priceFor("claude-sonnet-5").input, 3);
+  assert.equal(priceFor("claude-haiku-4-5").input, 1);
+  assert.equal(priceFor("claude-opus-4-8").input, 5);
+  assert.equal(priceFor("claude-opus-6-future"), null);
+});
+
+test("cache reads are billed even though they are not counted as tokens", () => {
+  // 1M cache reads on opus-5: no consumed tokens at all, but $0.50 of spend.
+  const read = estimateCostUsd(0, 0, "claude-opus-5", { read: 1_000_000 });
+  assert.ok(Math.abs(read - 0.5) < 1e-9, `expected 0.5, got ${read}`);
+
+  // Cache writes cost more than plain input, and are not charged twice
+  // even though `tokens` already contains them.
+  const write = estimateCostUsd(1_000_000, 0, "claude-opus-5", { write: 1_000_000 });
+  assert.ok(Math.abs(write - 6.25) < 1e-9, `expected 6.25, got ${write}`);
+
+  // A source that records no cache tokens keeps the old behaviour exactly.
+  assert.equal(estimateCostUsd(1_000_000, 0, "claude-opus-5"), 5);
 });
 
 test("estimateCostUsd prices leftover tokens as input and returns null when unknown", () => {

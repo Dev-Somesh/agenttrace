@@ -5,19 +5,47 @@
  * to match what you actually pay. They are not a quote, and they will drift.
  *
  * Matching is by prefix, longest first: "claude-sonnet-4" wins over "claude".
+ * Current models therefore need their own exact keys, or an older, shorter
+ * prefix silently prices them — "claude-opus-5" once matched "claude-opus"
+ * and reported three times its real rate.
+ *
+ * A model that is not listed reports no cost at all. That is deliberate: a
+ * blank prompts someone to check, an invented rate does not.
  */
 export const PRICES = {
-  "claude-opus-4": { input: 15, output: 75 },
-  "claude-opus": { input: 15, output: 75 },
+  // Current families.
+  "claude-fable-5": { input: 10, output: 50 },
+  "claude-mythos-5": { input: 10, output: 50 },
+  "claude-opus-5": { input: 5, output: 25 },
+  "claude-opus-4-8": { input: 5, output: 25 },
+  "claude-opus-4-7": { input: 5, output: 25 },
+  "claude-opus-4-6": { input: 5, output: 25 },
+  "claude-sonnet-5": { input: 3, output: 15 },
+  "claude-sonnet-4-6": { input: 3, output: 15 },
+  "claude-haiku-4-5": { input: 1, output: 5 },
+
+  // Superseded. Exact keys so they cannot shadow the entries above.
+  "claude-opus-4-5": { input: 5, output: 25 },
+  "claude-opus-4-1": { input: 15, output: 75 },
+  "claude-opus-4-0": { input: 15, output: 75 },
+  "claude-sonnet-4-5": { input: 3, output: 15 },
   "claude-sonnet-4": { input: 3, output: 15 },
-  "claude-sonnet": { input: 3, output: 15 },
-  "claude-haiku": { input: 0.8, output: 4 },
+
+  // Other families, for runners that record a model at all.
   "gpt-5": { input: 1.25, output: 10 },
   "gpt-4.1": { input: 2, output: 8 },
   "gpt-4o": { input: 2.5, output: 10 },
   "o3": { input: 2, output: 8 },
   "o4-mini": { input: 1.1, output: 4.4 },
 };
+
+/**
+ * Cache tokens are billed against the input rate at these multipliers.
+ * Writing to the cache costs more than plain input; reading from it costs
+ * far less — but it is not free, which is the mistake this replaces.
+ */
+export const CACHE_WRITE_MULTIPLIER = 1.25;
+export const CACHE_READ_MULTIPLIER = 0.1;
 
 export function priceFor(model) {
   if (!model || typeof model !== "string") return null;
@@ -34,25 +62,56 @@ export function priceFor(model) {
 }
 
 /**
- * USD for a run. `tokens` is consumed (input + output + cache creation);
- * cache creation is priced as input because that is the closest figure we
- * have without a separate field.
+ * USD for a run.
+ *
+ * `tokens` is what agenttrace reports as consumed: input + output + cache
+ * creation, deliberately excluding cache reads, because cache reads re-report
+ * the whole prompt every turn and summing them once put a session at 382% of
+ * its token budget.
+ *
+ * Cost is a different question from that headline, and answering it with the
+ * same number was wrong. Cache reads are billed — at a tenth of the input
+ * rate, but on the majority of tokens in any long session — so pricing them
+ * at zero understated real spend. Cache writes are billed above input rate,
+ * not at it.
+ *
+ * So the four classes are priced separately here while the token headline
+ * stays as it was. `cache` is optional: a source that does not record cache
+ * tokens simply gets the old behaviour.
  *
  * Returns null when the model is unknown rather than inventing a rate.
  */
-export function estimateCostUsd(tokens, outputTokens, model) {
+export function estimateCostUsd(tokens, outputTokens, model, cache = null) {
   const rate = priceFor(model);
   if (!rate) return null;
+
   const output = outputTokens || 0;
-  const input = Math.max(0, (tokens || 0) - output);
-  return (input * rate.input + output * rate.output) / 1_000_000;
+  const cacheWrite = Math.max(0, cache?.write || 0);
+  const cacheRead = Math.max(0, cache?.read || 0);
+
+  // `tokens` already contains cache writes; subtract them so they are not
+  // charged twice, once at input rate and again at the write multiplier.
+  const plainInput = Math.max(0, (tokens || 0) - output - cacheWrite);
+
+  const usd =
+    plainInput * rate.input +
+    output * rate.output +
+    cacheWrite * rate.input * CACHE_WRITE_MULTIPLIER +
+    cacheRead * rate.input * CACHE_READ_MULTIPLIER;
+
+  return usd / 1_000_000;
 }
 
 export function sumCostUsd(runs) {
   let total = 0;
   let known = 0;
   for (const r of runs) {
-    const n = r.costUsd ?? estimateCostUsd(r.tokens, r.outputTokens, r.model);
+    const n =
+      r.costUsd ??
+      estimateCostUsd(r.tokens, r.outputTokens, r.model, {
+        write: r.cacheWriteTokens,
+        read: r.cacheReadTokens,
+      });
     if (n == null) continue;
     total += n;
     known++;
