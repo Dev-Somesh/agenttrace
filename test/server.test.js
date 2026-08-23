@@ -99,3 +99,41 @@ test("a stale server is told to restart, never to reload", async () => {
     );
   }
 });
+
+test("current is the session doing the work, not the newest to open", async () => {
+  // Sessions were ordered by start time, so an empty session opened moments
+  // ago outranked the one actually working: the header named a session with
+  // 0 tokens while another had 8.8M, and "This conversation" read as stale
+  // because it was reporting a different conversation.
+  const { pickCurrent } = await import("../src/server.js");
+
+  const idle = {
+    id: "idle",
+    runs: [],
+    totals: { tokens: 0 },
+    startedAt: "2026-08-23T09:00:00Z",
+    lastActivityAt: "2026-08-23T09:00:00Z",
+  };
+  const working = {
+    id: "working",
+    runs: [],
+    totals: { tokens: 8_800_000 },
+    startedAt: "2026-08-23T01:00:00Z",
+    lastActivityAt: "2026-08-23T08:00:00Z",
+  };
+
+  // Started earlier, but it is the one with work in it.
+  assert.equal(pickCurrent([idle, working]).id, "working");
+  assert.equal(pickCurrent([working, idle]).id, "working");
+
+  // Between two sessions that both did work, the most recently written wins.
+  const older = { ...working, id: "older", lastActivityAt: "2026-08-23T02:00:00Z" };
+  assert.equal(pickCurrent([older, working]).id, "working");
+
+  // A session with runs but no recorded tokens still counts as active —
+  // some sources record no usage at all.
+  const unmeasured = { id: "unmeasured", runs: [{}], totals: {}, lastActivityAt: "2026-08-23T10:00:00Z" };
+  assert.equal(pickCurrent([idle, unmeasured]).id, "unmeasured");
+
+  assert.equal(pickCurrent([]), null);
+});

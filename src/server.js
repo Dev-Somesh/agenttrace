@@ -82,6 +82,32 @@ function uiVersion() {
 const STARTED_WITH = uiVersion();
 export const buildDrifted = () => uiVersion() !== STARTED_WITH;
 
+/**
+ * The session the console reports on.
+ *
+ * Not simply the newest. Sessions were ordered by when they *started*, so an
+ * empty session opened moments ago outranked the one actually doing the work —
+ * the header named a session with 0 tokens while another had 8.8M, and "This
+ * conversation" read as stale because it was reporting the wrong conversation.
+ *
+ * Recency of the last write is what "current" means, and a session that has
+ * recorded no tokens is never preferred over one that has: an editor opening a
+ * transcript it never uses should not displace real work.
+ */
+export function pickCurrent(sessions) {
+  if (!sessions.length) return null;
+  const score = (s) => ({
+    active: (s.totals?.tokens || 0) > 0 || (s.runs || []).length > 0 ? 1 : 0,
+    at: s.lastActivityAt || s.startedAt || "",
+  });
+  return [...sessions].sort((a, b) => {
+    const x = score(a);
+    const y = score(b);
+    if (x.active !== y.active) return y.active - x.active;
+    return String(y.at).localeCompare(String(x.at));
+  })[0];
+}
+
 export function buildState(cwd, { docs = null, since = null, access = null } = {}) {
   const { sessions: found, problems } = collectSessions(cwd);
   const sinceMs = parseSince(since);
@@ -130,7 +156,7 @@ export function buildState(cwd, { docs = null, since = null, access = null } = {
 
   const now = nowSessions(linked);
   const nowRuns = now.flatMap((s) => s.runs);
-  const current = linked[0] || null;
+  const current = pickCurrent(linked);
 
   return {
     generatedAt: new Date().toISOString(),
