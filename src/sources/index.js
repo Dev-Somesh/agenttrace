@@ -6,6 +6,7 @@
  * change, and nothing outside this directory may reference a vendor.
  */
 import { claudeCode } from "./claude-code.js";
+import { exampleDocuments } from "../examples.js";
 
 export const SOURCES = [claudeCode];
 
@@ -38,6 +39,9 @@ export function collectDocuments(cwd, only = null) {
       /* a broken source must not take the rest down */
     }
   }
+  // A project with no sidecar markdown still gets the shipped samples, so
+  // the tab explains itself instead of showing another repo's leftover plan.
+  if (!out.length) out.push(...exampleDocuments());
   if (!only || !only.length) return out;
   const wanted = new Set(only.map((s) => s.toLowerCase()));
   return out.filter(
