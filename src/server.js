@@ -39,22 +39,37 @@ const UI = path.join(here, "ui", "index.html");
  * This makes the mismatch visible in the browser. It cannot restart the
  * process, so the message says to restart the server, not to reload the page.
  */
-const BUILD_FILES = [
-  UI,
-  path.join(here, "server.js"),
-  path.join(here, "analyse.js"),
-  path.join(here, "sources", "index.js"),
-  path.join(here, "sources", "claude-code.js"),
-  path.join(here, "sources", "types.js"),
-];
+/**
+ * Every source file that makes up this build, discovered rather than listed.
+ *
+ * An explicit list was the first attempt and it reproduced the exact bug it
+ * was meant to fix: six files named, eight left out, so editing any of the
+ * eight left the server stale with `serverStale` still false. prices.js was
+ * the worst of them — the README tells the reader to edit it, so the one
+ * documented user modification was the one change staleness could not see,
+ * and it silently changes every dollar figure on the page.
+ *
+ * Walking the tree means a file added later cannot be forgotten. A hand-kept
+ * list eventually will be.
+ */
+function buildFiles(dir = here, found = []) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) buildFiles(full, found);
+    else if (entry.name.endsWith(".js") || entry.name.endsWith(".html")) found.push(full);
+  }
+  // Sorted so the hash does not depend on directory order.
+  return found.sort();
+}
 
 function uiVersion() {
   const hash = createHash("sha1");
-  for (const file of BUILD_FILES) {
+  for (const file of buildFiles()) {
     try {
+      hash.update(file.slice(here.length));
       hash.update(fs.readFileSync(file));
     } catch {
-      hash.update(`missing:${file}`);
+      hash.update(`unreadable:${file}`);
     }
   }
   return hash.digest("hex").slice(0, 10);
@@ -62,7 +77,7 @@ function uiVersion() {
 
 /**
  * The build on disk right now, versus the one this process started with.
- * They differ when the source changed after the server booted.
+ * They differ when any source changed — or a new one appeared — after boot.
  */
 const STARTED_WITH = uiVersion();
 export const buildDrifted = () => uiVersion() !== STARTED_WITH;

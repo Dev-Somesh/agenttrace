@@ -197,14 +197,31 @@ report said green, because `npm test` succeeded locally on Node 23.
 A gate nobody reads is not a gate. The badge makes red visible on the repo
 page. Do not remove it to unblock a push — fix the run.
 
-**Staleness has two forms and needs two messages.** The build hash covers the
-UI *and* the server sources, because hashing the UI alone left a blind spot: a
+**Staleness has two forms and needs two messages.** The build hash is derived
+by walking `src/` — do not replace it with a list. It was a list once, naming
+six files while eight went uncovered, which reproduced the exact bug it was
+written to fix. `prices.js` was the worst omission: the README tells the reader
+to edit it, so the one documented user modification was the one change
+staleness could not see, and it silently changes every dollar figure shown.
+
+The hash covers the UI *and* every source file, because hashing the UI alone
+left a blind spot: a
 process started before a fix keeps serving stale logic while the UI hash still
 matches, so the page looks healthy and reports wrong data. That happened — a
 console ran 29 minutes past a landed fix and nothing indicated it. `serverStale`
 in the payload compares the build on disk against the one the process booted
 with, and the page says "restart the server" rather than "reload", because
-reloading cannot fix it.
+reloading cannot fix it. The banner does still mention reloading — as a
+negation, since it is the reader's instinct — and a test enforces that
+distinction: `reload` may appear only near a negation, never as an instruction.
+
+**Assert what must be absent, not only what is present.** Both tests here were
+weak in the same way at first. One checked that three filenames appeared in the
+build list, which passed happily while `prices.js` was missing — it pinned an
+incomplete list instead of guarding completeness; it now asserts that editing a
+file actually moves the hash. The other checked "restart" was present, so
+"reload the page, or restart it" would have passed. A test that only confirms
+the good case cannot fail for the reason you wrote it.
 
 ## CI enforces four claims
 
