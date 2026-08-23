@@ -13,14 +13,17 @@ to disk. No instrumentation, no wrapper, no account.
 npx agenttrace
 ```
 
-Opens a local console at `http://localhost:4180`.
+Opens a local console at `http://127.0.0.1:4180` for the project you ran it in.
+The page names that project and lists every runner and model that has a session
+on it — two tools in two chats, both shown.
 
 ---
 
 ## What it shows
 
-**Now** — live runs, token spend, tool calls, and a **parallelism figure**: the
-share of elapsed time with more than one run active. Launching four agents
+**Now** — every live session on this project, across runners and models, not
+just the newest chat. Token spend, tool calls, and a **parallelism figure**:
+the share of elapsed time with more than one run active. Launching four agents
 together does not mean they overlapped; this says whether they did.
 
 **Execution timeline** — one lane per run, placed by when it actually ran.
@@ -34,9 +37,10 @@ claim from "its instructions said it would".
 **History** — every session found for the project, with per-session graphs, so
 you can see what a run cost weeks later.
 
-**Docs** — plans, skills and agent definitions the runner keeps beside your
-project, rendered in place. The tab appears only when there is something to
-show, and `--docs plans,skills` narrows it.
+**Docs** — plans, skills, agents, commands and rules the runner keeps beside
+*this* project, rendered in place. Files from a home-directory pile (other
+repos) are not shown. If the project has none, the tab lists short samples so
+you can see what it is for. `--docs plans,skills` narrows it.
 
 ## Why the numbers are what they are
 
@@ -46,6 +50,10 @@ of times. Totals are `input + output + cache_creation`.
 
 **Agent time is summed per run**, so it exceeds wall-clock wherever runs
 overlapped. The UI says so rather than implying elapsed duration.
+
+**Dollar figures come from a local price table**, not a live feed. Edit
+`src/prices.js` to match what you pay. Unknown models show no cost rather than
+an invented rate.
 
 **Completion is inferred, not asserted.** Transcripts carry no terminal marker,
 so a run quiet for 90 seconds reads as finished. The interface states this.
@@ -60,8 +68,15 @@ Everything is read from local files and rendered locally. **agenttrace makes no
 network requests and transmits nothing.** There is no telemetry and no account.
 
 Transcripts can contain prompts, file paths, and anything typed into a shell —
-including secrets. Treat the console as you would the transcripts themselves,
-and do not expose the port beyond localhost.
+including secrets. Treat the console as you would the transcripts themselves.
+
+The default bind is **localhost**. Forwarding the port (the button on the page,
+`--lan`, or `--tunnel`) is opt-in and lists every address with what it is for:
+this machine, Wi-Fi, VPN, and — if `ngrok` or `cloudflared` is already on your
+PATH — a public internet URL. Anyone who can open a live URL can read the
+transcripts and can stop sharing or stop the console from the same page.
+agenttrace does not bundle a tunnel client and does not start one unless you
+ask.
 
 ## Usage
 
@@ -72,6 +87,12 @@ npx agenttrace --dir <path>    # another project
 npx agenttrace --json          # print the data and exit
 npx agenttrace --sources       # list detected agent runners
 npx agenttrace --docs plans    # show only these document collections
+npx agenttrace --since 24h     # only runs active in this window
+npx agenttrace --export out.html
+                               # self-contained snapshot, shareable in a PR
+npx agenttrace --lan           # reachable on the same Wi-Fi (opt-in)
+npx agenttrace --tunnel        # also start ngrok / cloudflared if installed
+npx agenttrace --detach        # keep serving after the terminal closes
 ```
 
 `--json` makes it scriptable: pipe it into `jq` for cost reporting, or assert on
@@ -82,6 +103,7 @@ it in CI.
 | Runner | Status |
 |---|---|
 | Claude Code | Supported |
+| Cursor | Supported — transcripts do not record token usage, so those figures stay 0 |
 | Others | Adapter interface is public — see below |
 
 ## Adding a runner

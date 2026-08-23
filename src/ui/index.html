@@ -31,8 +31,15 @@ header{padding:26px 0 0}
 .bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;border:1px solid var(--line);
   background:var(--panel);padding:12px 16px}
 .bar h1{margin:0;font-size:.95rem;font-weight:700;letter-spacing:.02em}
+.bar .proj{font-family:ui-sans-serif,system-ui,sans-serif;font-size:.95rem;font-weight:700;letter-spacing:.01em}
 .bar .sub{color:var(--dim);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase}
 .live{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:.68rem;color:var(--dim)}
+.ex{color:var(--dim);font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;
+  border:1px solid var(--line);padding:4px 8px}
+.ex:hover{color:var(--ink)}
+.docq{width:100%;max-width:420px;border:1px solid var(--line);background:var(--panel);color:var(--ink);
+  padding:8px 12px;font:inherit;font-size:.7rem;margin:0 0 14px}
+.docq:focus{outline:1px solid var(--signal);outline-offset:0}
 .beacon{width:8px;height:8px;border-radius:50%;background:var(--signal)}
 .beacon.err{background:var(--alert)} .beacon.stale{background:var(--warn)}
 @keyframes sweep{0%{border-color:var(--signal)}100%{border-color:var(--line)}}
@@ -109,7 +116,14 @@ svg{display:block;width:100%}
 #doc{border:1px solid var(--line);background:var(--panel);padding:20px 24px;
   font-family:ui-serif,Georgia,serif;font-size:15px;line-height:1.65;font-variant-numeric:normal}
 #doc .src{font-family:ui-monospace,monospace;font-size:.62rem;color:var(--faint);
-  border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:16px}
+  padding-bottom:4px}
+#doc .used{font-size:.68rem;color:var(--dim);border-bottom:1px solid var(--line);
+  padding:0 0 10px;margin:0 0 16px;line-height:1.7}
+#doc .used b{display:block;font-size:.56rem;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--faint);margin:6px 0 4px}
+#doc .used button{background:none;border:0;padding:0;font:inherit;color:var(--signal);
+  cursor:pointer;text-align:left}
+#doc .used button:hover{text-decoration:underline}
 #doc h1{font-family:ui-sans-serif,system-ui,sans-serif;font-size:1.6rem;margin:0 0 12px}
 #doc h2{font-family:ui-sans-serif,system-ui,sans-serif;font-size:1.1rem;margin:26px 0 10px;
   padding-bottom:6px;border-bottom:1px solid var(--signal)}
@@ -128,16 +142,54 @@ svg{display:block;width:100%}
 #doc a{color:var(--signal)}
 .scroll{overflow-x:auto}
 footer{padding:34px 0 0;font-size:.62rem;color:var(--faint);line-height:1.9}
+
+.access{border:1px solid var(--line);border-top:0;background:var(--panel);padding:10px 16px 12px}
+.access .row{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin:0 0 8px}
+.access .k{font-size:.56rem;letter-spacing:.13em;text-transform:uppercase;color:var(--dim)}
+.across{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 4px}
+.chip{border:1px solid var(--line);padding:6px 10px;font-size:.68rem;color:var(--ink);background:var(--panel-2)}
+.chip .m{color:var(--violet)}
+.chip .on{color:var(--signal)}
+.urls{list-style:none;margin:0;padding:0}
+.urls li{display:grid;grid-template-columns:minmax(120px,1fr) minmax(0,2fr) auto;gap:8px 12px;
+  align-items:center;padding:7px 0;border-top:1px solid var(--grid);font-size:.7rem}
+.urls li:first-child{border-top:0}
+.urls .rel{color:var(--dim)}
+.urls .u{color:var(--ink);word-break:break-all}
+.urls .u.off{color:var(--faint)}
+.urls button,.act{appearance:none;background:var(--panel-2);color:var(--ink);border:1px solid var(--line);
+  font:inherit;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;padding:8px 12px;cursor:pointer;
+  min-height:40px}
+.urls button:hover,.act:hover{border-color:var(--ink)}
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.act.warn{color:var(--alert);border-color:var(--alert)}
+.note.confirm{border-left-color:var(--alert);margin-top:10px}
+.note.confirm button{margin:8px 8px 0 0}
+.sess{margin:0 0 22px}
+.sess .sh{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:0 0 8px;
+  font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+.sess .sh b{font-family:ui-sans-serif,system-ui,sans-serif;font-size:.8rem;letter-spacing:0;
+  text-transform:none;color:var(--ink)}
+@media(max-width:640px){
+  .urls li{grid-template-columns:1fr auto}
+  .urls .rel{grid-column:1/-1}
+  .tabs button,.act,.urls button{min-height:44px;padding:10px 14px}
+  .bar{padding:14px}
+}
 </style>
 </head>
 <body>
 <div class="wrap">
 <header>
   <div class="bar" id="bar">
-    <h1>agenttrace</h1><span class="sub" id="src">local</span>
+    <h1>agenttrace</h1>
+    <span class="proj" id="proj"></span>
+    <span class="sub" id="src">local</span>
+    <a class="ex" id="export" href="/api/export" download="agenttrace.html">Export</a>
     <span class="live"><span class="bw"><i></i><span class="beacon" id="beacon"></span></span>
       <span id="status">connecting…</span></span>
   </div>
+  <div class="access" id="access" hidden></div>
   <nav class="tabs" role="tablist">
     <button role="tab" id="t-now" aria-controls="p-now" aria-selected="true">Now</button>
     <button role="tab" id="t-graph" aria-controls="p-graph" aria-selected="false">Graph</button>
@@ -160,7 +212,7 @@ footer{padding:34px 0 0;font-size:.62rem;color:var(--faint);line-height:1.9}
 <section class="panel" id="p-graph" role="tabpanel" aria-labelledby="t-graph" hidden>
   <div class="card">
     <h2>Shared files</h2>
-    <p class="hint">Runs on the left, files two or more of them touched on the right. Edges are observed from the transcripts, not declared — a run is linked to a file because it opened it. Files only one run touched are that run's own territory and are listed with it instead.</p>
+    <p class="hint">Runs on the left, files two or more of them touched on the right — including across runners that are live on this project together. Edges are observed from the transcripts, not declared. Files only one run touched are that run's own territory and are listed with it instead.</p>
     <svg id="graph" role="img" aria-label="Run and shared file graph"></svg>
   </div>
 </section>
@@ -174,6 +226,7 @@ footer{padding:34px 0 0;font-size:.62rem;color:var(--faint);line-height:1.9}
 </section>
 
 <section class="panel" id="p-docs" role="tabpanel" aria-labelledby="t-docs" hidden>
+  <input class="docq" id="docq" type="search" placeholder="Filter by name or content…" autocomplete="off" hidden>
   <div class="docwrap">
     <nav class="doclist" id="doclist" aria-label="Documents"></nav>
     <article id="doc"><div class="empty">Select a document.</div></article>
@@ -181,8 +234,10 @@ footer{padding:34px 0 0;font-size:.62rem;color:var(--faint);line-height:1.9}
 </section>
 
 <footer>
-  Parsed from agent transcripts already on disk. Polls every 4s. Reads local files only and sends nothing anywhere.<br>
-  Tokens are input + output + cache creation. Cache reads are excluded: they re-report the whole prompt each turn.
+  Parsed from agent transcripts already on disk. Polls every 4s. Reads local files only and sends nothing anywhere.
+  Forwarding the port is opt-in. LAN addresses and, if ngrok or cloudflared is installed, a public URL are listed with what each is for.<br>
+  Tokens are input + output + cache creation. Cache reads are excluded: they re-report the whole prompt each turn.<br>
+  Dollar figures come from a local price table you maintain — they are not fetched and they will drift.
 </footer>
 </div>
 
@@ -194,9 +249,11 @@ const dur=ms=>{if(ms==null)return"—";const s=Math.round(ms/1000);
   return s<60?s+"s":Math.floor(s/60)+"m "+String(s%60).padStart(2,"0")+"s"};
 const ago=iso=>{if(!iso)return"—";const s=Math.round((Date.now()-new Date(iso))/1000);
   return s<60?s+"s":s<3600?Math.floor(s/60)+"m":Math.floor(s/3600)+"h"};
-const shortModel=m=>!m?"unknown":m.replace(/^claude-/,"").replace(/-\d{8}$/,"");
+const shortModel=m=>!m?"not recorded":m.replace(/^claude-/,"").replace(/-\d{8}$/,"");
+const money=n=>{if(n==null)return null;if(n===0)return"$0";if(n<0.01)return"<$0.01";
+  return"$"+n.toFixed(n<10?2:n<100?1:0)};
 
-let last=null,fails=0,fingerprint=null,changedAt=Date.now(),openDoc=null,docsSig=null;
+let last=null,fails=0,fingerprint=null,changedAt=Date.now(),openDoc=null,docsSig=null,docQuery="",accessSig=null;
 const bar=document.getElementById("bar"),beacon=document.getElementById("beacon");
 const tabs=[...document.querySelectorAll('[role=tab]')];
 tabs.forEach(t=>t.addEventListener("click",()=>{
@@ -251,30 +308,66 @@ function md(src){
 
 function renderDocs(collections){
   const tab=document.getElementById("t-docs");
+  const qel=document.getElementById("docq");
   // Hidden entirely when a runner keeps no documents, rather than an empty tab.
   tab.hidden=!collections.length;
+  qel.hidden=!collections.length;
   if(!collections.length)return;
 
-  const all=collections.flatMap(c=>c.items.map(it=>({...it,collection:c.label})));
+  if(!qel.dataset.bound){
+    qel.dataset.bound="1";
+    qel.addEventListener("input",()=>{docQuery=qel.value;docsSig=null;if(last)renderDocs(last.documents||[])});
+  }
+
+  const q=docQuery.trim().toLowerCase();
+  const filtered=collections.map(c=>({
+    ...c,
+    items:c.items.filter(it=>{
+      if(!q)return true;
+      return(it.name+" "+it.path+" "+it.markdown).toLowerCase().includes(q);
+    })
+  })).filter(c=>c.items.length);
+
+  const all=filtered.flatMap(c=>c.items.map(it=>({...it,collection:c.label})));
   if(!openDoc||!all.some(d=>d.id===openDoc))openDoc=all[0]?.id||null;
 
-  const sig=JSON.stringify(all.map(d=>[d.id,d.updatedAt]))+openDoc;
+  const sig=JSON.stringify(all.map(d=>[d.id,d.updatedAt,(d.usedBy||[]).map(u=>u.id)]))+openDoc+"|"+q;
   if(sig===docsSig)return;
   docsSig=sig;
 
-  document.getElementById("doclist").innerHTML=collections.map(c=>
-    `<b>${esc(c.label)}</b>`+c.items.map(it=>
-      `<button data-doc="${esc(it.id)}" aria-current="${it.id===openDoc}">${esc(it.name)}
-        <small>${new Date(it.updatedAt).toLocaleDateString()} · ${Math.round(it.bytes/1024)}kB</small>
-      </button>`).join("")).join("");
+  document.getElementById("doclist").innerHTML=filtered.length?filtered.map(c=>
+    `<b>${esc(c.label)}</b>`+c.items.map(it=>{
+      const n=(it.usedBy||[]).length;
+      return `<button data-doc="${esc(it.id)}" aria-current="${it.id===openDoc}">${esc(it.name)}
+        <small>${new Date(it.updatedAt).toLocaleDateString()} · ${Math.round(it.bytes/1024)}kB${n?` · ${n} run${n>1?"s":""}`:""}</small>
+      </button>`}).join("")).join("")
+    :`<b>No matches</b>`;
 
   document.querySelectorAll("#doclist button").forEach(b=>
     b.addEventListener("click",()=>{openDoc=b.dataset.doc;docsSig=null;renderDocs(collections)}));
 
   const doc=all.find(d=>d.id===openDoc);
+  const used=doc&&doc.usedBy&&doc.usedBy.length
+    ?`<div class="used"><b>Observed on</b>${doc.usedBy.map(u=>
+        `<button type="button" data-run="${esc(u.id)}">${esc(u.name)}</button>${u.via==="kind"?" (agent type)":" (opened)"}`
+      ).join("<br>")}</div>`
+    :`<div class="used"><b>Observed on</b>${doc&&doc.id&&doc.id.startsWith("example:")
+      ?"No run — this is a sample. A real document links to a run when that run opened the file, or when the runner recorded the run as that agent type."
+      :"No run in this history opened this file."}</div>`;
   document.getElementById("doc").innerHTML=doc
-    ?`<div class="src">${esc(doc.path)}</div>`+md(doc.markdown)
-    :'<div class="empty">Select a document.</div>';
+    ?`<div class="src">${esc(doc.path)}</div>`+used+md(doc.markdown)
+    :`<div class="empty">${q?"No documents match.":"Select a document."}</div>`;
+  document.querySelectorAll("#doc [data-run]").forEach(b=>
+    b.addEventListener("click",()=>showRun(b.dataset.run)));
+}
+
+function showRun(id){
+  const tab=document.getElementById("t-now");
+  tab.click();
+  requestAnimationFrame(()=>{
+    const el=document.querySelector(`[data-run="${CSS.escape(id)}"]`);
+    if(el)el.scrollIntoView({block:"center",behavior:"smooth"});
+  });
 }
 
 function timeline(runs){
@@ -329,65 +422,184 @@ function graph(runs,shared,el,compact){
   svg.setAttribute("height",H);svg.innerHTML=s;
 }
 
+function renderAccess(d){
+  const box=document.getElementById("access");
+  const a=d.access||{};
+  const frozen=!!window.__SNAPSHOT__;
+  const urls=a.urls||[];
+  const project=a.project||d.project||"";
+  const sig=JSON.stringify([a,d.project,d.across]);
+  const asking=document.getElementById("ask")&&!document.getElementById("ask").hidden;
+  document.getElementById("proj").textContent=project;
+  if(asking||sig===accessSig)return;
+  accessSig=sig;
+  if(project)document.title=project+" · agenttrace";
+  if(!urls.length&&frozen){box.hidden=true;return}
+  box.hidden=false;
+  const chips=(d.across||[]).map(x=>
+    `<span class="chip"><b>${esc(x.sourceLabel)}</b>
+      <span class="m"> · ${esc(x.model?shortModel(x.model):"model not recorded")}</span>
+      ${x.running?`<span class="on"> · ${x.running} running</span>`:` · ${x.runs} run${x.runs===1?"":"s"}`}</span>`
+  ).join("");
+  const tun=a.tunnel||{};
+  const sharing=a.lan||tun.url||tun.waiting;
+  const extra=[];
+  if(tun.waiting&&!tun.url)extra.push(`<li><span class="rel">public internet · ${esc(tun.tool||"tunnel")}</span><span class="u">starting…</span></li>`);
+  if(tun.error&&!tun.url)extra.push(`<li><span class="rel">public internet · ${esc(tun.tool||"tunnel")}</span><span class="u off">${esc(tun.error)}</span></li>`);
+  const list=urls.map(u=>
+    `<li>
+      <span class="rel">${esc(u.related)}</span>
+      <span class="u${u.live?"":" off"}">${esc(u.url)}${u.live?"":" · not reachable"}</span>
+      ${u.kind==="public"||u.live?`<button type="button" data-copy="${esc(u.url)}">Copy</button>`:`<button type="button" data-copy="${esc(u.url)}">Copy anyway</button>`}
+    </li>`).join("")+extra.join("");
+  const acts=frozen?"":`
+    <div class="acts">
+      ${sharing
+        ?`<button type="button" class="act" id="unfwd">Stop sharing</button>`
+        :`<button type="button" class="act" id="fwd">Forward port</button>`}
+      <button type="button" class="act warn" id="halt">Stop console</button>
+    </div>
+    <div id="ask" hidden></div>`;
+  box.innerHTML=`
+    <div class="across">${chips}</div>
+    <div class="row"><span class="k">${sharing?"Reachable at":"Addresses"}</span>
+      <span class="k">${project?esc(project)+" · this project":""}</span></div>
+    <ul class="urls">${list||"<li><span class='rel'>this machine</span><span class='u'>"+esc(location.origin)+"</span></li>"}</ul>
+    ${acts}`;
+  box.querySelectorAll("[data-copy]").forEach(b=>b.addEventListener("click",async()=>{
+    const t=b.dataset.copy;
+    try{await navigator.clipboard.writeText(t);b.textContent="Copied"}catch{
+      const i=document.createElement("input");i.value=t;document.body.appendChild(i);i.select();
+      document.execCommand("copy");i.remove();b.textContent="Copied"}
+    setTimeout(()=>b.textContent=b.textContent==="Copied"?(t&&urls.find(u=>u.url===t&&u.live)?"Copy":"Copy anyway"):b.textContent,1200);
+  }));
+  const fwd=document.getElementById("fwd");
+  const unfwd=document.getElementById("unfwd");
+  const halt=document.getElementById("halt");
+  const ask=document.getElementById("ask");
+  function confirm(html,okLabel,go){
+    if(!ask)return;
+    ask.hidden=false;
+    ask.className="note confirm";
+    ask.innerHTML=html+`<br><button type="button" class="act warn" id="yes">${okLabel}</button>
+      <button type="button" class="act" id="no">Cancel</button>`;
+    document.getElementById("yes").onclick=()=>{ask.hidden=true;go()};
+    document.getElementById("no").onclick=()=>{ask.hidden=true};
+  }
+  if(fwd)fwd.onclick=()=>{
+    const tools=(tun.available||[]).map(t=>t.label).join(" or ");
+    const lanLines=urls.filter(u=>u.kind!=="local").map(u=>`${u.related}: ${u.url}`).join("<br>");
+    const pub=tools
+      ?`<b>A public URL will be opened with ${esc(tools)}</b> — anyone on the internet who has that link can read the transcripts for <b>${esc(project)}</b>.`
+      :`<b>No ngrok or cloudflared on PATH.</b> Only the local network will be opened. Install ngrok for a public phone URL.`;
+    confirm(`${pub}<br>${lanLines||""}<br>Transcripts include prompts and file paths.`,
+      "Forward port",()=>postLan(true));
+  };
+  if(unfwd)unfwd.onclick=()=>confirm(
+    "<b>Stop sharing.</b> The public tunnel and LAN URLs will drop. This machine stays on localhost.",
+    "Stop sharing",()=>postLan(false));
+  if(halt)halt.onclick=()=>confirm(
+    "<b>Stop the console.</b> Every open tab, including this one, will go offline.",
+    "Stop console",()=>postStop());
+}
+
+async function postLan(on){
+  try{
+    const res=await fetch("/api/lan",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({on}),cache:"no-store"});
+    if(!res.ok)throw new Error("HTTP "+res.status);
+    const a=await res.json();
+    accessSig=null;
+    if(last){last.access=a;renderAccess(last)}
+    if(!on)setStatus("sharing off — localhost only","ok");
+  }catch(e){setStatus("could not change sharing — "+e.message,"error")}
+}
+async function postStop(){
+  try{
+    await fetch("/api/stop",{method:"POST",cache:"no-store"});
+    setStatus("console stopped","error");
+  }catch{setStatus("console stopped","error")}
+}
+
 function draw(d){
-  const cur=d.current,runs=cur?cur.runs:[],L=d.lifetime;
+  const now=d.now&&d.now.length?d.now:(d.current?[d.current]:[]);
+  const runs=now.flatMap(s=>s.runs||[]);
+  const L=d.lifetime;
   const running=runs.filter(r=>r.status==="running").length;
   const lastWrite=runs.map(r=>r.lastActivityAt).filter(Boolean).sort().pop();
-  const c=cur?cur.concurrency:{peak:0,overlapMs:0,wallMs:0};
+  const c=d.nowConcurrency||{peak:0,overlapMs:0,wallMs:0};
   const overlapPct=c.wallMs?Math.round(c.overlapMs/c.wallMs*100):0;
+  const many=now.length>1;
 
   document.getElementById("src").textContent=(d.sources||[]).map(s=>s.label).join(" · ")||"no runner found";
+  renderAccess(d);
   document.getElementById("stats").innerHTML=`
     <div class="stat"><span class="k">Now</span>
       <div class="v" style="color:${running?"var(--signal)":"var(--dim)"}">${running?running+" running":"Idle"}</div>
-      <span class="s">${running?"of "+runs.length+" this session":"quiet for "+ago(lastWrite)}</span></div>
-    <div class="stat"><span class="k">Runs this session</span><div class="v">${runs.length}</div>
+      <span class="s">${running?"of "+runs.length+(many?" across "+now.length+" sessions":""):"quiet for "+ago(lastWrite)}</span></div>
+    <div class="stat"><span class="k">${many?"Runs now":"Runs this session"}</span><div class="v">${runs.length}</div>
       <span class="s">peak ${c.peak} concurrent</span></div>
     <div class="stat"><span class="k">Tokens</span><div class="v">${fmt(runs.reduce((n,r)=>n+r.tokens,0))}</div>
-      <span class="s">${fmt(runs.reduce((n,r)=>n+r.outputTokens,0))} generated</span></div>
+      <span class="s">${fmt(runs.reduce((n,r)=>n+r.outputTokens,0))} generated${(()=>{const c=runs.reduce((n,r)=>n+(r.costUsd||0),0);return c?` · ~${money(c)}`:"";})()}</span></div>
     <div class="stat"><span class="k">Tool calls</span><div class="v">${fmt(runs.reduce((n,r)=>n+r.toolCalls,0))}</div>
       <span class="s">reads, writes, commands</span></div>
     <div class="stat"><span class="k">Parallelism</span><div class="v">${overlapPct}%</div>
       <span class="s">of elapsed time overlapping</span></div>`;
 
   document.getElementById("caveat").innerHTML=
-    `<b>Measured, not estimated.</b> Summed from transcripts on disk. Counts are cumulative for the session — `+
-    `a run stays listed after it finishes, so <b>Now</b> is the only live figure. Completion is inferred from `+
-    `write recency: transcripts carry no terminal marker, so a run quiet for 90s reads as finished.`;
+    `<b>Measured, not estimated.</b> Summed from transcripts on disk. Counts are cumulative — `+
+    `a run stays listed after it finishes, so <b>Now</b> is the only live figure. `+
+    (many?`These sessions are from different runners on the same project; a shared file here is observed contact, not a declared team.`:`Completion is inferred from write recency: transcripts carry no terminal marker, so a run quiet for 90s reads as finished.`);
 
   const hint=document.getElementById("tlhint");
+  const srcNote=many?` ${now.length} sessions across ${(d.across||[]).map(x=>x.sourceLabel).join(" and ")}.`:" ";
   hint.textContent=running
-    ?`Each lane is one run, placed by when it actually ran. ${running} still running.`
-    :`Each lane is one run, placed by when it actually ran. All ${runs.length} have finished — this is completed history, not live activity.`;
+    ?`Each lane is one run, placed by when it actually ran.${srcNote}${running} still running.`
+    :`Each lane is one run, placed by when it actually ran.${srcNote}All ${runs.length} have finished — this is completed history, not live activity.`;
 
-  timeline(runs);
-  graph(runs,cur?cur.shared:[],"graph",false);
+  const labeled=runs.map(r=>({...r,name:(many&&r.sourceLabel?r.sourceLabel+" · ":"")+(r.name||"")}));
+  timeline(labeled);
+  graph(labeled,d.nowShared||(now[0]?now[0].shared:[]),"graph",false);
   renderDocs(d.documents||[]);
 
-  document.getElementById("runs").innerHTML=runs.length?runs.map(r=>`
-    <article class="run">
+  const card=r=>`
+    <article class="run" data-run="${esc(r.id)}">
       <div class="top"><h3>${esc(r.name)}</h3>
         <span class="tag ${r.status}">${r.status}</span>
+        ${r.sourceLabel?`<span class="tag kind">${esc(r.sourceLabel)}</span>`:""}
         ${r.kind?`<span class="tag kind">${esc(r.kind)}</span>`:""}
         <span class="tag model">${esc(shortModel(r.model))}</span>
         <span class="rid">${esc(r.id.slice(0,12))}</span></div>
       <div class="kv">
         <div><span class="k">Effort</span><span class="v">${esc(r.effort||"—")}</span></div>
-        <div><span class="k">Tokens</span><span class="v">${fmt(r.tokens)}</span></div>
+        <div><span class="k">Tokens</span><span class="v">${fmt(r.tokens)}${r.costUsd!=null?` · ~${money(r.costUsd)}`:""}</span></div>
         <div><span class="k">Generated</span><span class="v">${fmt(r.outputTokens)}</span></div>
         <div><span class="k">Tool calls</span><span class="v">${fmt(r.toolCalls)}</span></div>
         <div><span class="k">Turns</span><span class="v">${fmt(r.turns)}</span></div>
         <div><span class="k">Duration</span><span class="v">${dur(r.durationMs)}</span></div>
         <div><span class="k">Last write</span><span class="v">${ago(r.lastActivityAt)} ago</span></div>
       </div>
+      ${r.docs&&r.docs.length?`<div class="files"><b>Docs this run used</b>${r.docs.map(d=>esc(d.collection)+": "+esc(d.name)+(d.via==="kind"?" (agent type)":"")).join("<br>")}</div>`:""}
       ${r.own&&r.own.length?`<div class="files"><b>Files only this run touched</b>${r.own.slice(0,8).map(f=>esc(f)).join("<br>")}${r.own.length>8?`<br>+${r.own.length-8} more`:""}</div>`:""}
-    </article>`).join(""):'<div class="empty">No runs in this session.</div>';
+    </article>`;
+
+  document.getElementById("runs").innerHTML=now.length?now.map(s=>{
+    const n=(s.runs||[]).filter(r=>r.status==="running").length;
+    const models=[...new Set((s.runs||[]).map(r=>r.model).filter(Boolean))].map(shortModel);
+    return `<div class="sess">
+      <div class="sh"><b>${esc(s.sourceLabel||s.sourceId||"session")}</b>
+        ${n?`<span class="tag running">${n} running</span>`:`<span class="tag">idle</span>`}
+        ${models.length?`<span class="tag model">${esc(models.join(" · "))}</span>`:`<span class="tag model">model not recorded</span>`}
+        <span>${(s.runs||[]).length} run${(s.runs||[]).length===1?"":"s"}</span></div>
+      ${(s.runs||[]).map(card).join("")||'<div class="empty">No runs in this session.</div>'}
+    </div>`;
+  }).join(""):'<div class="empty">No runs in this session.</div>';
 
   document.getElementById("lifetime").innerHTML=`
     <div class="stat"><span class="k">Runs, all time</span><div class="v">${fmt(L.runs)}</div>
       <span class="s">across ${fmt(L.sessions)} sessions</span></div>
     <div class="stat"><span class="k">Tokens</span><div class="v">${fmt(L.tokens)}</div>
-      <span class="s">${fmt(L.outputTokens)} generated</span></div>
+      <span class="s">${fmt(L.outputTokens)} generated${L.costUsd!=null?` · ~${money(L.costUsd)}`:""}</span></div>
     <div class="stat"><span class="k">Tool calls</span><div class="v">${fmt(L.toolCalls)}</div><span class="s">all sessions</span></div>
     <div class="stat"><span class="k">Agent time</span><div class="v">${Math.round(L.agentSeconds/60)}m</div>
       <span class="s">summed, not wall-clock</span></div>`;
@@ -396,12 +608,12 @@ function draw(d){
   const list=document.getElementById("hist");
   list.innerHTML=d.sessions.map(s=>`
     <div class="hs">
-      <div class="hh"><b>${esc(String(s.startedAt).slice(0,16).replace("T"," "))}</b>
-        ${s.id===(cur&&cur.id)?'<span class="tag running">current</span>':""}
-        <span class="m">${s.runs.length} runs · ${fmt(s.runs.reduce((n,r)=>n+r.tokens,0))} tokens · peak ${s.concurrency.peak} concurrent</span></div>
+      <div class="hh"><b>${esc(s.sourceLabel||"")} · ${esc(String(s.startedAt).slice(0,16).replace("T"," "))}</b>
+        ${now.some(n=>n.id===s.id)?'<span class="tag running">now</span>':""}
+        <span class="m">${s.runs.length} runs · ${[...new Set(s.runs.map(r=>r.model).filter(Boolean))].map(shortModel).join(" · ")||"model not recorded"} · ${fmt(s.runs.reduce((n,r)=>n+r.tokens,0))} tokens · peak ${s.concurrency.peak} concurrent</span></div>
       ${s.shared.length?`<div style="margin:2px 0 10px;padding:6px 0;border-top:1px solid var(--grid);border-bottom:1px solid var(--grid)"><svg data-s="${esc(s.id)}"></svg></div>`:""}
       ${s.runs.map(r=>`<div class="hr2"><span class="nm">${esc(r.name)}</span>
-        <span class="ty">${esc(r.kind||"—")}</span>
+        <span class="ty">${esc(r.kind||r.sourceLabel||"—")}</span>
         <span class="bar2"><i style="width:${Math.max(2,r.tokens/peak*100)}%;background:${tone(r)}"></i></span>
         <span class="tk">${fmt(r.tokens)}</span><span class="du">${dur(r.durationMs)}</span></div>`).join("")}
     </div>`).join("")||'<div class="empty">No history yet.</div>';
@@ -413,12 +625,17 @@ function draw(d){
 
 async function tick(){
   let d;
-  try{
-    const res=await fetch("/api/state",{cache:"no-store"});
-    if(!res.ok)throw new Error("HTTP "+res.status);
-    d=await res.json();
-  }catch(e){
-    fails++;setStatus(`unreachable (${fails}) — is agenttrace still running?`,"error");return;
+  if(window.__SNAPSHOT__){
+    d=window.__SNAPSHOT__;
+    document.getElementById("export").hidden=true;
+  }else{
+    try{
+      const res=await fetch("/api/state",{cache:"no-store"});
+      if(!res.ok)throw new Error("HTTP "+res.status);
+      d=await res.json();
+    }catch(e){
+      fails++;setStatus(`unreachable (${fails}) — is agenttrace still running?`,"error");return;
+    }
   }
   fails=0;last=d;
 
@@ -427,7 +644,7 @@ async function tick(){
       `<div id="stale" class="note"><b>This page is out of date.</b> agenttrace has been updated since you opened it — reload.</div>`);
   }
 
-  const fp=JSON.stringify([d.lifetime,(d.current?d.current.runs:[]).map(r=>[r.id,r.tokens,r.status])]);
+  const fp=JSON.stringify([d.lifetime,(d.now||[]).map(s=>[s.id,s.sourceId,(s.runs||[]).map(r=>[r.id,r.tokens,r.status,r.model])]),d.access&&[d.access.lan,d.access.tunnel&&d.access.tunnel.url]]);
   if(fp!==fingerprint){fingerprint=fp;changedAt=Date.now()}
 
   let broke=null;
@@ -435,10 +652,15 @@ async function tick(){
 
   const quiet=Math.round((Date.now()-changedAt)/1000);
   const note=quiet>20?` · unchanged for ${quiet<60?quiet+"s":Math.round(quiet/60)+"m"}`:" · updated";
-  setStatus(`live · ${new Date().toLocaleTimeString()}${broke?" · "+broke+" failed":note}`,broke?"stale":"ok");
-  pulse();
+  if(window.__SNAPSHOT__){
+    setStatus(`snapshot · ${d.generatedAt?new Date(d.generatedAt).toLocaleString():"frozen"}${broke?" · "+broke+" failed":""}`,broke?"stale":"ok");
+  }else{
+    setStatus(`live · ${new Date().toLocaleTimeString()}${broke?" · "+broke+" failed":note}`,broke?"stale":"ok");
+    pulse();
+  }
 }
-tick();setInterval(tick,4000);
+tick();
+if(!window.__SNAPSHOT__)setInterval(tick,4000);
 addEventListener("resize",()=>{if(last)draw(last)});
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)tick()});
 </script>

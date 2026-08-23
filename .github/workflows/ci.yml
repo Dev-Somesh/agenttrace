@@ -70,3 +70,20 @@ jobs:
             exit 1
           fi
           echo "No outbound network calls."
+
+      # The network-call grep above no longer covers the whole risk: exposure
+      # now happens by spawning ngrok or cloudflared, which no regex for
+      # fetch/axios can see. Guard the behaviour instead of the syntax.
+      - name: Default bind stays loopback
+        if: ${{ !cancelled() }}
+        run: |
+          if ! grep -q '"127.0.0.1"' src/server.js; then
+            echo "::error::server.js no longer names 127.0.0.1 — the default bind must be loopback"
+            exit 1
+          fi
+          if grep -nE 'bindHost\s*=\s*"0\.0\.0\.0"' src/server.js; then
+            echo "::error::unconditional wide bind — 0.0.0.0 must depend on an explicit opt-in"
+            exit 1
+          fi
+          node --test test/server.test.js
+          echo "Default bind is loopback; wider binds require --lan or --tunnel."

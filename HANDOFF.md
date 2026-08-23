@@ -31,12 +31,21 @@ No dependencies. Node 18+.
 
 ```
 src/
-  cli.js              argument parsing, startup checks
-  server.js           HTTP, /api/state, UI version stamping
-  analyse.js          sharedFiles, ownFiles, lifetime, concurrency
+  cli.js              argument parsing, startup, --lan / --detach
+  server.js           HTTP, /api/state, /api/export, /api/lan, /api/stop
+  access.js           project name + local/LAN/VPN/public URLs (no network calls)
+  tunnel.js           optional ngrok/cloudflared spawn; URL parsed from stdout
+  analyse.js          sharedFiles, ownFiles, lifetime, concurrency, --since,
+                      nowSessions (every live runner, not only the newest)
+  prices.js           local per-model USD table; nothing is fetched
+  export.js           self-contained HTML snapshot
+  examples.js         shipped sample docs when a project has none
+  examples/           the sample markdown
   sources/
     types.js          the Source interface + token accounting
-    claude-code.js    first implementation (sessions + documents)
+    read.js           jsonl + path hygiene (existence checks on scrapes only)
+    claude-code.js    sessions + documents
+    cursor.js         sessions + documents (no token usage in transcripts)
     index.js          registry
   ui/index.html       single-file UI, no build step
 ```
@@ -58,6 +67,8 @@ version did, and reported 382% of a token budget. Totals are
 be invented — a truncated `package.json` produced `package.js` — so those are
 checked against disk. Applying the check to *both* silently erased every file
 since deleted, which destroyed exactly the history the tool exists to record.
+The scrape regex now requires a word boundary after the extension so
+`package.json` is not itself truncated to `package.js`.
 
 **Interconnection is computed per session.** Two runs months apart both reading
 a shared config were not collaborating.
@@ -68,12 +79,13 @@ fact.
 
 **Documents are an optional source capability, not a feature of the app.** A
 source may implement `documents({cwd})` and return collections of markdown a
-runner keeps beside a project — Claude Code returns plans, skills, agents and
-commands from both `.claude/` and `~/.claude/`. Two rules hold it together: a
-source that has no such concept simply omits the method, and only directories
-that exist *and contain files* are returned, so an empty install shows nothing
-rather than four empty headings. The Docs tab hides itself when there is
-nothing to show. `--docs plans,skills` filters what surfaces.
+runner keeps *beside this project*. User-global folders are ignored: they mix
+every repo on the machine, and a plan written for something else must not
+appear here. Two rules hold it together: a source that has no such concept
+simply omits the method, and only directories that exist *and contain files*
+are returned. When a project has nothing, the package ships a short sample of
+each kind (plan, skill, agent, command, rule) so the tab explains itself.
+`--docs plans,skills` filters what surfaces.
 
 This is the shape any "show me X from my project" request should take. The
 temptation is to read a path directly from the server or the UI; that breaks
@@ -92,35 +104,43 @@ was found.
 
 ## What to build next, roughly in order
 
-1. ~~**Tests.**~~ Done for `analyse.js` — 12 tests, run by CI on Node 18/20/22.
-   Writing them immediately caught a wrong assumption: back-to-back runs must
-   report `peak: 1`, not 2, because a run ending exactly as another starts was
-   never concurrent. The sweep already handled it; the test author did not.
-   **Still untested:** the transcript parsing in `claude-code.js`, which needs
-   fixture `.jsonl` files.
+1. ~~**Tests.**~~ `analyse.js` plus fixture-backed parsing for both sources.
+   Writing the concurrency tests immediately caught a wrong assumption:
+   back-to-back runs must report `peak: 1`, not 2. The sweep already handled
+   it; the test author did not.
 
-2. **A second source.** The interface is only proven by one implementation.
-   Cursor, Aider, or OpenAI Codex CLI would each validate or break the shape.
-   Expect `filesTouched` to be the awkward part.
+2. ~~**A second source.**~~ Cursor. The interface held. The awkward part was
+   exactly `filesTouched` — Cursor names `path` rather than `file_path`, and
+   its transcripts carry no token usage, so those fields stay 0 rather than
+   being guessed. Aider or OpenAI Codex CLI would still be useful.
 
-3. **Document search.** With plans, skills and agent definitions in one place,
-   a filter across them is the obvious next step. Keep it client-side — the
-   payload is already loaded.
+3. ~~**Document search.**~~ Client-side filter on the Docs tab.
 
-4. **Cost, not just tokens.** A per-model price table turns token counts into
-   money, which is what most people actually want. Keep prices in one file and
-   be explicit they are user-maintained rather than fetched.
+4. ~~**Cost, not just tokens.**~~ `src/prices.js`. Prefix-matched, user-edited,
+   never fetched. Unknown models show no dollar figure.
 
-5. **`--since` / `--json` filters** so it can be used in CI to assert a run
-   stayed within budget.
+5. ~~**`--since` / `--json` filters.**~~ `--since 1h` / `7d` / ISO date.
 
-6. **Export.** A single self-contained HTML file for a run, shareable in a PR.
+6. ~~**Export.**~~ `--export out.html` and the Export control in the console.
+   The file is the UI with a frozen `__SNAPSHOT__`; it does not poll.
+
+Further work, if any: a third source, or per-run export rather than the whole
+project. Some transcripts omit the model — show "not recorded" rather than
+guessing.
 
 ## Things to be careful about
 
 **Privacy is the product's reputation.** It reads local files and makes no
 network requests. Any feature that would send data anywhere needs to be opt-in,
-obvious, and documented. Do not add telemetry.
+obvious, and documented. Do not add telemetry. A public tunnel is opt-in only:
+spawn a binary already on PATH (`ngrok` or `cloudflared`), parse the URL from
+its stdout, never bundle a client, never call its HTTP API (CI forbids
+`http.request` in `src/**/*.js`). Default bind is `127.0.0.1`. The page lists
+every URL with what it is related to (this machine / Wi-Fi / VPN / public).
+The same page can stop sharing or stop the process.
+
+**Now is every live runner on the project.** Two sessions from two tools, or
+two models, must both appear. Do not collapse the view to `sessions[0]`.
 
 **Transcripts contain secrets.** Shell commands in them may include tokens and
 keys. Never render raw command text in the UI without thinking about that. The
