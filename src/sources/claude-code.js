@@ -140,21 +140,37 @@ function parseRun(file, repoRoot) {
 function sessionTotals(file) {
   let tokens = 0;
   let outputTokens = 0;
+  let toolCalls = 0;
+  let turns = 0;
   let contextNow = 0;
   let model = null;
+  let first = null;
+  let last = null;
+
   for (const rec of readJsonl(file)) {
-    const u = rec?.message?.usage;
-    if (!u) continue;
-    const m = rec?.message?.model;
+    if (rec.timestamp) {
+      first = first || rec.timestamp;
+      last = rec.timestamp;
+    }
+    const msg = rec?.message;
+    if (!msg) continue;
+    const m = msg.model;
     if (!model && m && !/^<.*>$/.test(m)) model = m;
+    if (rec.type === "assistant") turns++;
+    if (Array.isArray(msg.content)) {
+      for (const b of msg.content) if (b?.type === "tool_use") toolCalls++;
+    }
+    const u = msg.usage;
+    if (!u) continue;
     tokens += consumedTokens(u);
     outputTokens += u.output_tokens || 0;
+    // Context is the most recent prompt, not a running total.
     contextNow =
       (u.input_tokens || 0) +
       (u.cache_read_input_tokens || 0) +
       (u.cache_creation_input_tokens || 0);
   }
-  return { tokens, outputTokens, toolCalls: 0, contextNow, model };
+  return { tokens, outputTokens, toolCalls, turns, contextNow, model, startedAt: first, lastActivityAt: last };
 }
 
 export const claudeCode = {
@@ -176,27 +192,34 @@ export const claudeCode = {
 
     const out = [];
     for (const entry of files) {
-      const subDir = path.join(dir, entry.id, "subagents");
-      if (!fs.existsSync(subDir)) continue;
-      const runs = fs
-        .readdirSync(subDir)
-        .filter((f) => f.endsWith(".jsonl"))
-        .map((f) => parseRun(path.join(subDir, f), cwd))
-        .filter(Boolean)
-        .sort((a, b) => String(a.startedAt).localeCompare(String(b.startedAt)));
-      if (!runs.length) continue;
-
       const totals = sessionTotals(entry.file);
-      totals.toolCalls = runs.reduce((n, r) => n + r.toolCalls, 0);
+      if (!totals.tokens) continue; // an empty or aborted session
+
+      const subDir = path.join(dir, entry.id, "subagents");
+      const runs = fs.existsSync(subDir)
+        ? fs
+            .readdirSync(subDir)
+            .filter((f) => f.endsWith(".jsonl"))
+            .map((f) => parseRun(path.join(subDir, f), cwd))
+            .filter(Boolean)
+            .sort((a, b) => String(a.startedAt).localeCompare(String(b.startedAt)))
+        : [];
+
+      const stamps = [totals.startedAt, ...runs.map((r) => r.startedAt)].filter(Boolean).sort();
+      const lastStamps = [totals.lastActivityAt, ...runs.map((r) => r.lastActivityAt)]
+        .filter(Boolean)
+        .sort();
 
       out.push({
         id: entry.id,
         sourceId: "claude-code",
-        startedAt: runs.map((r) => r.startedAt).filter(Boolean).sort()[0] || null,
-        lastActivityAt:
-          runs.map((r) => r.lastActivityAt).filter(Boolean).sort().pop() || null,
+        startedAt: stamps[0] || null,
+        lastActivityAt: lastStamps.pop() || null,
         runs,
-        totals,
+        totals: {
+          ...totals,
+          status: statusFromLastWrite(totals.lastActivityAt),
+        },
       });
     }
     return out.sort((a, b) => String(b.startedAt).localeCompare(String(a.startedAt)));

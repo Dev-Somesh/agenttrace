@@ -531,25 +531,33 @@ function draw(d){
   const overlapPct=c.wallMs?Math.round(c.overlapMs/c.wallMs*100):0;
   const many=now.length>1;
 
-  document.getElementById("src").textContent=(d.sources||[]).map(s=>s.label).join(" · ")||"no runner found";
+  const mt=cur?cur.totals||{}:{};
+  document.getElementById("src").textContent=
+    ((d.sources||[]).map(s=>s.label).join(" · ")||"no runner found")
+    + (cur?` · session ${cur.id.slice(0,8)}`:"");
   renderAccess(d);
   document.getElementById("stats").innerHTML=`
     <div class="stat"><span class="k">Now</span>
       <div class="v" style="color:${running?"var(--signal)":"var(--dim)"}">${running?running+" running":"Idle"}</div>
-      <span class="s">${running?"of "+runs.length+(many?" across "+now.length+" sessions":""):"quiet for "+ago(lastWrite)}</span></div>
-    <div class="stat"><span class="k">${many?"Runs now":"Runs this session"}</span><div class="v">${runs.length}</div>
-      <span class="s">peak ${c.peak} concurrent</span></div>
-    <div class="stat"><span class="k">Tokens</span><div class="v">${fmt(runs.reduce((n,r)=>n+r.tokens,0))}</div>
-      <span class="s">${fmt(runs.reduce((n,r)=>n+r.outputTokens,0))} generated${(()=>{const c=runs.reduce((n,r)=>n+(r.costUsd||0),0);return c?` · ~${money(c)}`:"";})()}</span></div>
-    <div class="stat"><span class="k">Tool calls</span><div class="v">${fmt(runs.reduce((n,r)=>n+r.toolCalls,0))}</div>
-      <span class="s">reads, writes, commands</span></div>
+      <span class="s">${running?"of "+runs.length+(many?" across "+now.length+" sessions":" this session"):"quiet for "+ago(lastWrite)}</span></div>
+    <div class="stat"><span class="k">This conversation</span>
+      <div class="v" style="color:${mt.status==="running"?"var(--signal)":"inherit"}">${fmt(mt.tokens)}</div>
+      <span class="s">${fmt(mt.toolCalls)} tool calls · ${fmt(mt.turns)} turns</span></div>
+    <div class="stat"><span class="k">Delegated to runs</span><div class="v">${fmt(runs.reduce((n,r)=>n+r.tokens,0))}</div>
+      <span class="s">${runs.length} runs · peak ${c.peak} concurrent</span></div>
+    <div class="stat"><span class="k">Context now</span><div class="v">${fmt(mt.contextNow)}</div>
+      <span class="s">most recent prompt</span></div>
     <div class="stat"><span class="k">Parallelism</span><div class="v">${overlapPct}%</div>
       <span class="s">of elapsed time overlapping</span></div>`;
 
   document.getElementById("caveat").innerHTML=
-    `<b>Measured, not estimated.</b> Summed from transcripts on disk. Counts are cumulative — `+
+    `<b>Measured, not estimated.</b> <b>This conversation</b> is the main agent's own work; `+
+    `<b>delegated</b> is what it handed to subagents. They are shown separately because counting only `+
+    `subagents hides most of the activity in a session where the main agent did the work itself. `+
+    `Summed from transcripts on disk. Counts are cumulative — `+
     `a run stays listed after it finishes, so <b>Now</b> is the only live figure. `+
-    (many?`These sessions are from different runners on the same project; a shared file here is observed contact, not a declared team.`:`Completion is inferred from write recency: transcripts carry no terminal marker, so a run quiet for 90s reads as finished.`);
+    (many?`These sessions are from different runners on the same project; a shared file here is observed contact, not a declared team. `:``)+
+    `Completion is inferred from write recency: transcripts carry no terminal marker, so a run quiet for 90s reads as finished.`;
 
   const hint=document.getElementById("tlhint");
   const srcNote=many?` ${now.length} sessions across ${(d.across||[]).map(x=>x.sourceLabel).join(" and ")}.`:" ";
@@ -598,8 +606,8 @@ function draw(d){
   document.getElementById("lifetime").innerHTML=`
     <div class="stat"><span class="k">Runs, all time</span><div class="v">${fmt(L.runs)}</div>
       <span class="s">across ${fmt(L.sessions)} sessions</span></div>
-    <div class="stat"><span class="k">Tokens</span><div class="v">${fmt(L.tokens)}</div>
-      <span class="s">${fmt(L.outputTokens)} generated${L.costUsd!=null?` · ~${money(L.costUsd)}`:""}</span></div>
+    <div class="stat"><span class="k">Tokens, all time</span><div class="v">${fmt(L.totalTokens)}</div>
+      <span class="s">${fmt(L.mainTokens)} conversation · ${fmt(L.tokens)} delegated${L.totalCostUsd!=null?` · ~${money(L.totalCostUsd)}`:""}</span></div>
     <div class="stat"><span class="k">Tool calls</span><div class="v">${fmt(L.toolCalls)}</div><span class="s">all sessions</span></div>
     <div class="stat"><span class="k">Agent time</span><div class="v">${Math.round(L.agentSeconds/60)}m</div>
       <span class="s">summed, not wall-clock</span></div>`;
@@ -609,9 +617,10 @@ function draw(d){
   list.innerHTML=d.sessions.map(s=>`
     <div class="hs">
       <div class="hh"><b>${esc(s.sourceLabel||"")} · ${esc(String(s.startedAt).slice(0,16).replace("T"," "))}</b>
-        ${now.some(n=>n.id===s.id)?'<span class="tag running">now</span>':""}
-        <span class="m">${s.runs.length} runs · ${[...new Set(s.runs.map(r=>r.model).filter(Boolean))].map(shortModel).join(" · ")||"model not recorded"} · ${fmt(s.runs.reduce((n,r)=>n+r.tokens,0))} tokens · peak ${s.concurrency.peak} concurrent</span></div>
+        ${s.id===(cur&&cur.id)?'<span class="tag running">current</span>':now.some(n=>n.id===s.id)?'<span class="tag running">now</span>':""}
+        <span class="m">${esc(s.id.slice(0,8))} · ${fmt((s.totals||{}).tokens)} conversation · ${s.runs.length} runs, ${fmt(s.runs.reduce((n,r)=>n+r.tokens,0))} delegated${s.runs.length>1?` · peak ${s.concurrency.peak}`:""}</span></div>
       ${s.shared.length?`<div style="margin:2px 0 10px;padding:6px 0;border-top:1px solid var(--grid);border-bottom:1px solid var(--grid)"><svg data-s="${esc(s.id)}"></svg></div>`:""}
+      ${!s.runs.length?'<div class="hr2"><span class="nm" style="color:var(--dim)">No subagents — the main agent did this session itself</span></div>':""}
       ${s.runs.map(r=>`<div class="hr2"><span class="nm">${esc(r.name)}</span>
         <span class="ty">${esc(r.kind||r.sourceLabel||"—")}</span>
         <span class="bar2"><i style="width:${Math.max(2,r.tokens/peak*100)}%;background:${tone(r)}"></i></span>

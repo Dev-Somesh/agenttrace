@@ -22,8 +22,10 @@ on it — two tools in two chats, both shown.
 ## What it shows
 
 **Now** — every live session on this project, across runners and models, not
-just the newest chat. Token spend, tool calls, and a **parallelism figure**:
-the share of elapsed time with more than one run active. Launching four agents
+just the newest chat. For each: the session id, what the **main conversation**
+itself spent, what it **delegated** to subagents, live context size, tool
+calls, and a **parallelism figure** — the share of elapsed time with more than
+one run active. Launching four agents
 together does not mean they overlapped; this says whether they did.
 
 **Execution timeline** — one lane per run, placed by when it actually ran.
@@ -43,6 +45,10 @@ repos) are not shown. If the project has none, the tab lists short samples so
 you can see what it is for. `--docs plans,skills` narrows it.
 
 ## Why the numbers are what they are
+
+**Main-session work is counted separately from subagent runs.** Counting only
+subagents hides most of the activity in a session where the main agent did the
+work itself; summing them hides the split. Both are shown.
 
 **Cache reads are excluded from token totals.** They re-report the entire prompt
 on every turn, so summing them across a session counts the same context dozens

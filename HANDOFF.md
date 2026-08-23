@@ -77,6 +77,14 @@ a shared config were not collaborating.
 transcripts carry no terminal marker. The UI says so. Do not present it as
 fact.
 
+**The main session is measured, not just its subagents.** An early version only
+counted subagent runs and skipped any session that had none. That hid most of
+the activity in a normal conversation: on the session that motivated this fix,
+subagents accounted for 2.1M tokens while the conversation driving them
+accounted for 8.3M. They are reported separately — "this conversation" versus
+"delegated" — because summing them hides the split, and showing only one hides
+the work. Sessions with no subagents are kept.
+
 **Documents are an optional source capability, not a feature of the app.** A
 source may implement `documents({cwd})` and return collections of markdown a
 runner keeps *beside this project*. User-global folders are ignored: they mix
