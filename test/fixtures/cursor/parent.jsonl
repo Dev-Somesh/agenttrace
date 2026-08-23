@@ -1,0 +1,5 @@
+{"role":"user","message":{"content":[{"type":"text","text":"<timestamp>Thursday, Jan 15, 2026, 10:00 AM (UTC+0)</timestamp>\n<user_query>\nRewrite the landing page\n</user_query>"}]}}
+{"role":"assistant","message":{"content":[{"type":"text","text":"I'll read the page and then rewrite it."},{"type":"tool_use","name":"Read","input":{"path":"src/app.ts"}}]}}
+{"role":"assistant","message":{"content":[{"type":"tool_use","name":"Write","input":{"path":"src/gone.ts","contents":"deleted later"}}]}}
+{"role":"assistant","message":{"content":[{"type":"tool_use","name":"Shell","input":{"command":"cat package.json && cat package.js","description":"check manifests"}}]}}
+{"role":"user","message":{"content":[{"type":"text","text":"<timestamp>Thursday, Jan 15, 2026, 10:05 AM (UTC+0)</timestamp>\n<user_query>\nkeep going\n</user_query>"}]}}

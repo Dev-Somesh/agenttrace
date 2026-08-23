@@ -6,9 +6,10 @@
  * change, and nothing outside this directory may reference a vendor.
  */
 import { claudeCode } from "./claude-code.js";
+import { cursor } from "./cursor.js";
 import { exampleDocuments } from "../examples.js";
 
-export const SOURCES = [claudeCode];
+export const SOURCES = [claudeCode, cursor];
 
 /** Sources actually present on this machine. */
 export function availableSources() {
