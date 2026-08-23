@@ -19,7 +19,8 @@ Opens a local console at `http://localhost:4180`.
 
 ## What it shows
 
-**Now** — live runs, token spend, tool calls, and a **parallelism figure**: the
+**Now** — the session id, what the **main conversation** itself spent, what it
+**delegated** to subagents, live context size, and a **parallelism figure**: the
 share of elapsed time with more than one run active. Launching four agents
 together does not mean they overlapped; this says whether they did.
 
@@ -39,6 +40,10 @@ project, rendered in place. The tab appears only when there is something to
 show, and `--docs plans,skills` narrows it.
 
 ## Why the numbers are what they are
+
+**Main-session work is counted separately from subagent runs.** Counting only
+subagents hides most of the activity in a session where the main agent did the
+work itself; summing them hides the split. Both are shown.
 
 **Cache reads are excluded from token totals.** They re-report the entire prompt
 on every turn, so summing them across a session counts the same context dozens

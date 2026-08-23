@@ -29,17 +29,42 @@ export function ownFiles(run, shared) {
   return run.writes.filter((f) => !sharedSet.has(f));
 }
 
+/**
+ * Totals across everything.
+ *
+ * Main-session work is counted separately from subagent runs and reported
+ * both ways. Counting only subagents hid most of the activity in any
+ * conversation where the main agent did the work itself — which is most of
+ * them. Counting them together would hide the split.
+ */
 export function lifetime(sessions) {
   const runs = sessions.flatMap((s) => s.runs);
+  const main = sessions.map((s) => s.totals || {});
+
+  const sum = (list, key) => list.reduce((n, x) => n + (x[key] || 0), 0);
+
+  const agentTokens = sum(runs, "tokens");
+  const mainTokens = sum(main, "tokens");
+
   return {
     sessions: sessions.length,
     runs: runs.length,
     running: runs.filter((r) => r.status === "running").length,
-    tokens: runs.reduce((n, r) => n + r.tokens, 0),
-    outputTokens: runs.reduce((n, r) => n + r.outputTokens, 0),
-    toolCalls: runs.reduce((n, r) => n + r.toolCalls, 0),
+
+    // Subagents only.
+    tokens: agentTokens,
+    outputTokens: sum(runs, "outputTokens"),
+    toolCalls: sum(runs, "toolCalls"),
     // Summed per run, so it exceeds wall-clock wherever runs overlapped.
-    agentSeconds: Math.round(runs.reduce((n, r) => n + (r.durationMs || 0), 0) / 1000),
+    agentSeconds: Math.round(sum(runs, "durationMs") / 1000),
+
+    // The conversation driving them.
+    mainTokens,
+    mainOutputTokens: sum(main, "outputTokens"),
+    mainToolCalls: sum(main, "toolCalls"),
+    mainTurns: sum(main, "turns"),
+
+    totalTokens: agentTokens + mainTokens,
   };
 }
 
