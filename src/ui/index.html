@@ -464,12 +464,30 @@ function renderAccess(d){
       <button type="button" class="act warn" id="halt">Stop console</button>
     </div>
     <div id="ask" hidden></div>`;
+  // Addresses and sharing controls are configuration, not status: needed when
+  // you go looking, noise the rest of the time. Collapsed by default, but open
+  // whenever the console is actually reachable beyond this machine — that is a
+  // state worth seeing without asking for it.
+  const remembered=(()=>{try{return localStorage.getItem("at-access-open")}catch{return null}})();
+  const open=sharing||remembered==="1";
+  const primary=urls.find(u=>u.kind==="public")||urls.find(u=>u.live)||urls[0];
+
   box.innerHTML=`
     <div class="across">${chips}</div>
-    <div class="row"><span class="k">${sharing?"Reachable at":"Addresses"}</span>
-      <span class="k">${project?esc(project)+" · this project":""}</span></div>
-    <ul class="urls">${list||"<li><span class='rel'>this machine</span><span class='u'>"+esc(location.origin)+"</span></li>"}</ul>
-    ${acts}`;
+    <details class="accessdisc"${open?" open":""}>
+      <summary>
+        <span class="k">${sharing?"Reachable at":"Addresses"}</span>
+        <span class="sum">${primary?esc(primary.url):esc(location.origin)}${sharing?" · shared":" · this machine only"}</span>
+        <span class="proj">${project?esc(project):""}</span>
+      </summary>
+      <ul class="urls">${list||"<li><span class='rel'>this machine</span><span class='u'>"+esc(location.origin)+"</span></li>"}</ul>
+      ${acts}
+    </details>`;
+
+  const disc=box.querySelector(".accessdisc");
+  disc?.addEventListener("toggle",()=>{
+    try{localStorage.setItem("at-access-open",disc.open?"1":"0")}catch{/* private mode */}
+  });
   box.querySelectorAll("[data-copy]").forEach(b=>b.addEventListener("click",async()=>{
     const t=b.dataset.copy;
     try{await navigator.clipboard.writeText(t);b.textContent="Copied"}catch{

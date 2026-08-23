@@ -105,3 +105,23 @@ test("draw survives an empty project with no sessions", async () => {
     vm.runInContext("draw(__empty)", Object.assign(sandbox, { __empty: empty }), { timeout: 5000 });
   }, "draw() threw with no sessions — the first-run case");
 });
+
+test("addresses and sharing controls collapse, and open when actually shared", async () => {
+  // Addresses are configuration, not status — needed when you go looking,
+  // noise otherwise. But a console reachable beyond this machine is a state
+  // worth seeing without asking, so sharing forces it open.
+  const html = await readFile(new URL("../src/ui/index.html", import.meta.url), "utf8");
+  const fn = html.slice(html.indexOf("function renderAccess"));
+
+  assert.match(fn, /<details class="accessdisc"/, "access panel must be a details element");
+  assert.match(fn, /const open\s*=\s*sharing\s*\|\|/, "sharing must force the panel open");
+  assert.match(fn, /at-access-open/, "the open/closed choice must be remembered");
+
+  // localStorage throws in private mode; the console must not break there.
+  const guarded = fn.slice(fn.indexOf("at-access-open") - 300, fn.indexOf("at-access-open") + 400);
+  assert.match(guarded, /try\s*\{/, "localStorage access must be guarded");
+
+  // The summary has to say something useful while collapsed, or collapsing it
+  // just hides whether the console is exposed.
+  assert.match(fn, /this machine only/, "collapsed summary must state the reachability");
+});
