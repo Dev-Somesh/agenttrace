@@ -1,0 +1,27 @@
+{
+  "name": "agenttrace",
+  "version": "0.1.0",
+  "description": "See what your coding agents actually did — cost, concurrency, and which files each run touched. Reads local transcripts, sends nothing anywhere.",
+  "type": "module",
+  "bin": { "agenttrace": "src/cli.js" },
+  "main": "src/server.js",
+  "exports": {
+    ".": "./src/server.js",
+    "./sources": "./src/sources/index.js"
+  },
+  "files": ["src", "README.md", "LICENSE"],
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "start": "node src/cli.js",
+    "test": "node --test test/"
+  },
+  "keywords": [
+    "ai-agents", "observability", "claude-code", "developer-tools",
+    "llm", "cli", "tracing", "agent-monitoring"
+  ],
+  "author": "Dev-Somesh <itdeveloper06@gmail.com>",
+  "license": "MIT",
+  "repository": { "type": "git", "url": "git+https://github.com/Dev-Somesh/agenttrace.git" },
+  "bugs": { "url": "https://github.com/Dev-Somesh/agenttrace/issues" },
+  "homepage": "https://github.com/Dev-Somesh/agenttrace#readme"
+}

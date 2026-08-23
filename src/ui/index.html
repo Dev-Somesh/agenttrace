@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>agenttrace</title>
+<style>
+:root{
+  --bg:#080B0F; --panel:#0D1218; --panel-2:#111823; --grid:#151E29;
+  --line:#1E2A38; --ink:#DDE5E9; --dim:#6E8291; --faint:#3D4C5A;
+  --signal:#3DDC97; --alert:#FF6B4A; --warn:#FFC24B; --cyan:#38BDF8; --violet:#A78BFA;
+}
+@media (prefers-color-scheme:light){
+  :root{
+    --bg:#F2F4F3; --panel:#FFF; --panel-2:#F7F9F8; --grid:#E4E9E7;
+    --line:#D3D8D6; --ink:#10161F; --dim:#5C6B72; --faint:#AAB6BC;
+    --signal:#0E6E5C; --alert:#B4432B; --warn:#8A6410; --cyan:#0E7490; --violet:#6D28D9;
+  }
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font-size:13px;line-height:1.55;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums;
+  -webkit-font-smoothing:antialiased;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:44px 44px;background-position:-1px -1px}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px 90px}
+h1,h2,h3,.ui{font-family:ui-sans-serif,system-ui,-apple-system,"Helvetica Neue",sans-serif}
+
+header{padding:26px 0 0}
+.bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;border:1px solid var(--line);
+  background:var(--panel);padding:12px 16px}
+.bar h1{margin:0;font-size:.95rem;font-weight:700;letter-spacing:.02em}
+.bar .sub{color:var(--dim);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase}
+.live{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:.68rem;color:var(--dim)}
+.beacon{width:8px;height:8px;border-radius:50%;background:var(--signal)}
+.beacon.err{background:var(--alert)} .beacon.stale{background:var(--warn)}
+@keyframes sweep{0%{border-color:var(--signal)}100%{border-color:var(--line)}}
+@keyframes ping{0%{transform:scale(1);opacity:1}70%{transform:scale(2.6);opacity:0}100%{opacity:0}}
+.bar.pulse{animation:sweep 1100ms ease-out}
+.bw{position:relative;display:grid;place-items:center;width:8px;height:8px}
+.bw i{position:absolute;inset:0;border-radius:50%;background:var(--signal)}
+.bar.pulse .bw i{animation:ping 1100ms ease-out}
+@media (prefers-reduced-motion:reduce){.bar.pulse,.bar.pulse .bw i{animation:none}}
+
+.tabs{display:flex;margin:18px 0 0;border-bottom:1px solid var(--line)}
+.tabs button{background:none;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;
+  padding:9px 16px;font-family:inherit;font-size:.74rem;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--dim);cursor:pointer}
+.tabs button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--signal)}
+.tabs button:focus-visible{outline:1px solid var(--signal);outline-offset:-2px}
+.panel{padding:20px 0 0}.panel[hidden]{display:none}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+  border:1px solid var(--line);background:var(--panel);margin-bottom:18px}
+.stat{padding:12px 15px;border-right:1px solid var(--line)}
+.stat:last-child{border-right:0}
+.stat .k{display:block;font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-bottom:6px}
+.stat .v{font-family:ui-sans-serif,system-ui,sans-serif;font-size:1.45rem;font-weight:700;letter-spacing:-.02em;line-height:1}
+.stat .s{display:block;font-size:.63rem;color:var(--dim);margin-top:5px}
+
+.card{border:1px solid var(--line);background:var(--panel);padding:14px 16px 8px;margin-bottom:18px}
+.card h2{margin:0 0 2px;font-size:.7rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.card .hint{font-size:.63rem;color:var(--faint);margin:0 0 12px;max-width:80ch;line-height:1.6}
+svg{display:block;width:100%}
+
+.run{border:1px solid var(--line);background:var(--panel);margin-bottom:10px}
+.run .top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:11px 15px;
+  border-bottom:1px solid var(--line);background:var(--panel-2)}
+.run .top h3{margin:0;font-size:.85rem;font-weight:600}
+.rid{color:var(--faint);font-size:.62rem;margin-left:auto}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(108px,1fr));gap:11px 18px;padding:12px 15px}
+.kv .k{display:block;font-size:.56rem;letter-spacing:.13em;text-transform:uppercase;color:var(--dim);margin-bottom:2px}
+.kv .v{font-size:.8rem}
+.files{padding:0 15px 12px;font-size:.63rem;color:var(--dim);line-height:1.8}
+.files b{display:block;font-size:.56rem;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);margin:6px 0 2px}
+.tag{font-size:.57rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:2px 7px;
+  border:1px solid currentColor;color:var(--dim);white-space:nowrap}
+.tag.running{color:var(--signal)} .tag.kind{color:var(--cyan)} .tag.model{color:var(--violet)}
+
+.note{border-left:2px solid var(--warn);padding:3px 0 3px 14px;margin:0 0 16px;font-size:.71rem;color:var(--dim);line-height:1.7}
+.note b{color:var(--ink)}
+.empty{padding:34px 0;text-align:center;color:var(--dim);font-size:.76rem}
+.hs{border-top:1px solid var(--line);padding:13px 0 6px}.hs:first-child{border-top:0}
+.hh{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:9px}
+.hh b{font-family:ui-sans-serif,system-ui,sans-serif;font-size:.78rem}
+.hh .m{font-size:.64rem;color:var(--dim)}
+.hr2{display:grid;grid-template-columns:minmax(140px,1.5fr) 84px minmax(80px,2fr) 70px 56px;
+  gap:10px;align-items:center;padding:3px 0;font-size:.69rem}
+.hr2 .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hr2 .ty{color:var(--cyan);font-size:.58rem;letter-spacing:.09em;text-transform:uppercase}
+.hr2 .bar2{height:7px;background:var(--grid)}.hr2 .bar2 i{display:block;height:100%}
+.hr2 .tk,.hr2 .du{color:var(--dim);text-align:right}
+@media(max-width:640px){.stat{border-right:0;border-bottom:1px solid var(--line)}
+  .hr2{grid-template-columns:1fr 60px}.hr2 .ty,.hr2 .bar2{display:none}.wrap{padding:0 14px 60px}}
+footer{padding:34px 0 0;font-size:.62rem;color:var(--faint);line-height:1.9}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="bar" id="bar">
+    <h1>agenttrace</h1><span class="sub" id="src">local</span>
+    <span class="live"><span class="bw"><i></i><span class="beacon" id="beacon"></span></span>
+      <span id="status">connecting…</span></span>
+  </div>
+  <nav class="tabs" role="tablist">
+    <button role="tab" id="t-now" aria-controls="p-now" aria-selected="true">Now</button>
+    <button role="tab" id="t-graph" aria-controls="p-graph" aria-selected="false">Graph</button>
+    <button role="tab" id="t-hist" aria-controls="p-hist" aria-selected="false">History</button>
+  </nav>
+</header>
+
+<section class="panel" id="p-now" role="tabpanel" aria-labelledby="t-now">
+  <div class="stats" id="stats"></div>
+  <div class="card">
+    <h2>Execution timeline</h2>
+    <p class="hint" id="tlhint">Each lane is one run, placed by when it actually ran. Overlapping bars were concurrent.</p>
+    <div style="overflow-x:auto"><svg id="timeline" role="img" aria-label="Run timeline"></svg></div>
+  </div>
+  <p class="note" id="caveat"></p>
+  <div id="runs"></div>
+</section>
+
+<section class="panel" id="p-graph" role="tabpanel" aria-labelledby="t-graph" hidden>
+  <div class="card">
+    <h2>Shared files</h2>
+    <p class="hint">Runs on the left, files two or more of them touched on the right. Edges are observed from the transcripts, not declared — a run is linked to a file because it opened it. Files only one run touched are that run's own territory and are listed with it instead.</p>
+    <svg id="graph" role="img" aria-label="Run and shared file graph"></svg>
+  </div>
+</section>
+
+<section class="panel" id="p-hist" role="tabpanel" aria-labelledby="t-hist" hidden>
+  <div class="stats" id="lifetime"></div>
+  <div class="card"><h2>All sessions</h2>
+    <p class="hint">Every run found for this project, newest session first. Bars are token spend relative to the largest run.</p>
+    <div id="hist"></div>
+  </div>
+</section>
+
+<footer>
+  Parsed from agent transcripts already on disk. Polls every 4s. Reads local files only and sends nothing anywhere.<br>
+  Tokens are input + output + cache creation. Cache reads are excluded: they re-report the whole prompt each turn.
+</footer>
+</div>
+
+<script>
+const LOADED_UI="__UI_VERSION__";
+const fmt=n=>n==null?"—":n.toLocaleString("en-US");
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const dur=ms=>{if(ms==null)return"—";const s=Math.round(ms/1000);
+  return s<60?s+"s":Math.floor(s/60)+"m "+String(s%60).padStart(2,"0")+"s"};
+const ago=iso=>{if(!iso)return"—";const s=Math.round((Date.now()-new Date(iso))/1000);
+  return s<60?s+"s":s<3600?Math.floor(s/60)+"m":Math.floor(s/3600)+"h"};
+const shortModel=m=>!m?"unknown":m.replace(/^claude-/,"").replace(/-\d{8}$/,"");
+
+let last=null,fails=0,fingerprint=null,changedAt=Date.now();
+const bar=document.getElementById("bar"),beacon=document.getElementById("beacon");
+const tabs=[...document.querySelectorAll('[role=tab]')];
+tabs.forEach(t=>t.addEventListener("click",()=>{
+  tabs.forEach(o=>{const on=o===t;o.setAttribute("aria-selected",String(on));
+    document.getElementById(o.getAttribute("aria-controls")).hidden=!on;});
+  if(last)requestAnimationFrame(()=>draw(last));
+}));
+function setStatus(t,s){document.getElementById("status").textContent=t;
+  beacon.className="beacon"+(s==="error"?" err":s==="stale"?" stale":"")}
+function pulse(){bar.classList.remove("pulse");void bar.offsetWidth;bar.classList.add("pulse")}
+const tone=r=>r.status==="running"?"var(--signal)":/opus/.test(r.model||"")?"var(--violet)"
+  :r.kind==="Explore"?"var(--cyan)":r.kind==="Plan"?"var(--warn)":"var(--cyan)";
+
+function timeline(runs){
+  const svg=document.getElementById("timeline");
+  const rs=runs.filter(r=>r.startedAt);
+  if(!rs.length){svg.innerHTML="";return}
+  const t0=Math.min(...rs.map(r=>+new Date(r.startedAt)));
+  const t1=Math.max(...rs.map(r=>+new Date(r.lastActivityAt||r.startedAt)));
+  const span=Math.max(t1-t0,1000);
+  const padL=176,padR=88,rowH=32,top=26;
+  const W=Math.max(720,(svg.parentElement?.clientWidth||900)-2),plot=W-padL-padR;
+  const H=top+rs.length*rowH+18,x=t=>padL+((+new Date(t)-t0)/span)*plot;
+  let s="";
+  for(let i=0;i<=4;i++){const px=padL+plot*i/4;
+    s+=`<line x1="${px}" y1="${top-8}" x2="${px}" y2="${H-12}" stroke="var(--grid)"/>`;
+    s+=`<text x="${px}" y="${top-13}" fill="var(--faint)" font-size="9" text-anchor="middle">+${Math.round(span*i/4/1000)}s</text>`}
+  rs.forEach((r,i)=>{const y=top+i*rowH+11,x1=x(r.startedAt),x2=Math.max(x(r.lastActivityAt||r.startedAt),x1+3),c=tone(r);
+    s+=`<text x="${padL-12}" y="${y+3.5}" fill="var(--dim)" font-size="10" text-anchor="end">${esc((r.name||"").slice(0,24))}</text>`;
+    s+=`<rect x="${x1}" y="${y-5}" width="${x2-x1}" height="10" fill="${c}" opacity="${r.status==="running"?".95":".55"}"/>`;
+    s+=`<circle cx="${x1}" cy="${y}" r="3" fill="${c}"/>`;
+    if(r.status==="running")s+=`<circle cx="${x2}" cy="${y}" r="4" fill="none" stroke="${c}"><animate attributeName="r" values="4;9" dur="1.6s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;0" dur="1.6s" repeatCount="indefinite"/></circle>`;
+    s+=`<text x="${x2+8}" y="${y+3.5}" fill="var(--dim)" font-size="9">${fmt(r.tokens)}</text>`});
+  svg.setAttribute("viewBox",`0 0 ${W} ${H}`);svg.setAttribute("height",H);svg.innerHTML=s;
+}
+
+function graph(runs,shared,el,compact){
+  const svg=typeof el==="string"?document.getElementById(el):el;
+  const hubs=(shared||[]).slice(0,compact?8:12);
+  if(!svg||!runs.length){if(svg)svg.innerHTML="";return}
+  const rowH=compact?26:30,top=compact?16:30,pad=12;
+  const W=Math.max(560,(svg.parentElement?.clientWidth||900)-2);
+  const H=top+Math.max(runs.length,hubs.length)*rowH+14;
+  const aW=Math.min(300,W*.34),aX=pad,fX=Math.round(W*.52);
+  const ay=i=>top+i*rowH+rowH/2,idx=new Map(runs.map((r,i)=>[r.id,i]));
+  let s="";
+  if(!compact){s+=`<text x="${aX}" y="16" fill="var(--faint)" font-size="9" letter-spacing="1.4">RUNS</text>`;
+    s+=`<text x="${fX}" y="16" fill="var(--faint)" font-size="9" letter-spacing="1.4">SHARED FILES</text>`}
+  hubs.forEach((h,r)=>{const y2=ay(r);h.runs.forEach(id=>{const i=idx.get(id);if(i==null)return;
+    const y1=ay(i),x1=aX+aW,x2=fX-10,mid=(x1+x2)/2;
+    s+=`<path d="M${x1} ${y1} C ${mid} ${y1}, ${mid} ${y2}, ${x2} ${y2}" fill="none" stroke="${tone(runs[i])}" stroke-width="1" opacity=".28"/>`})});
+  runs.forEach((r,i)=>{const y=ay(i),c=tone(r),h=rowH-10;
+    s+=`<rect x="${aX}" y="${y-h/2}" width="${aW}" height="${h}" fill="var(--panel-2)" stroke="var(--line)"/>`;
+    s+=`<rect x="${aX}" y="${y-h/2}" width="3" height="${h}" fill="${c}"/>`;
+    const max=Math.floor((aW-104)/5.6),nm=(r.name||"").length>max?(r.name||"").slice(0,max-1)+"…":(r.name||"");
+    s+=`<text x="${aX+11}" y="${y+3.5}" fill="var(--ink)" font-size="10">${esc(nm)}</text>`;
+    s+=`<text x="${aX+aW-9}" y="${y+3.5}" fill="var(--dim)" font-size="8.5" text-anchor="end">${fmt(r.tokens)}</text>`});
+  hubs.forEach((h,r)=>{const y=ay(r);
+    s+=`<circle cx="${fX-10}" cy="${y}" r="2.5" fill="var(--signal)"/>`;
+    s+=`<text x="${fX-20}" y="${y+3.5}" fill="var(--faint)" font-size="9" text-anchor="end">${h.runs.length}×</text>`;
+    s+=`<text x="${fX}" y="${y+3.5}" fill="var(--ink)" font-size="9.5">${esc(h.file)}</text>`});
+  svg.setAttribute("viewBox",`0 0 ${W} ${H}`);svg.setAttribute("preserveAspectRatio","xMinYMin meet");
+  svg.setAttribute("height",H);svg.innerHTML=s;
+}
+
+function draw(d){
+  const cur=d.current,runs=cur?cur.runs:[],L=d.lifetime;
+  const running=runs.filter(r=>r.status==="running").length;
+  const lastWrite=runs.map(r=>r.lastActivityAt).filter(Boolean).sort().pop();
+  const c=cur?cur.concurrency:{peak:0,overlapMs:0,wallMs:0};
+  const overlapPct=c.wallMs?Math.round(c.overlapMs/c.wallMs*100):0;
+
+  document.getElementById("src").textContent=(d.sources||[]).map(s=>s.label).join(" · ")||"no runner found";
+  document.getElementById("stats").innerHTML=`
+    <div class="stat"><span class="k">Now</span>
+      <div class="v" style="color:${running?"var(--signal)":"var(--dim)"}">${running?running+" running":"Idle"}</div>
+      <span class="s">${running?"of "+runs.length+" this session":"quiet for "+ago(lastWrite)}</span></div>
+    <div class="stat"><span class="k">Runs this session</span><div class="v">${runs.length}</div>
+      <span class="s">peak ${c.peak} concurrent</span></div>
+    <div class="stat"><span class="k">Tokens</span><div class="v">${fmt(runs.reduce((n,r)=>n+r.tokens,0))}</div>
+      <span class="s">${fmt(runs.reduce((n,r)=>n+r.outputTokens,0))} generated</span></div>
+    <div class="stat"><span class="k">Tool calls</span><div class="v">${fmt(runs.reduce((n,r)=>n+r.toolCalls,0))}</div>
+      <span class="s">reads, writes, commands</span></div>
+    <div class="stat"><span class="k">Parallelism</span><div class="v">${overlapPct}%</div>
+      <span class="s">of elapsed time overlapping</span></div>`;
+
+  document.getElementById("caveat").innerHTML=
+    `<b>Measured, not estimated.</b> Summed from transcripts on disk. Counts are cumulative for the session — `+
+    `a run stays listed after it finishes, so <b>Now</b> is the only live figure. Completion is inferred from `+
+    `write recency: transcripts carry no terminal marker, so a run quiet for 90s reads as finished.`;
+
+  const hint=document.getElementById("tlhint");
+  hint.textContent=running
+    ?`Each lane is one run, placed by when it actually ran. ${running} still running.`
+    :`Each lane is one run, placed by when it actually ran. All ${runs.length} have finished — this is completed history, not live activity.`;
+
+  timeline(runs);
+  graph(runs,cur?cur.shared:[],"graph",false);
+
+  document.getElementById("runs").innerHTML=runs.length?runs.map(r=>`
+    <article class="run">
+      <div class="top"><h3>${esc(r.name)}</h3>
+        <span class="tag ${r.status}">${r.status}</span>
+        ${r.kind?`<span class="tag kind">${esc(r.kind)}</span>`:""}
+        <span class="tag model">${esc(shortModel(r.model))}</span>
+        <span class="rid">${esc(r.id.slice(0,12))}</span></div>
+      <div class="kv">
+        <div><span class="k">Effort</span><span class="v">${esc(r.effort||"—")}</span></div>
+        <div><span class="k">Tokens</span><span class="v">${fmt(r.tokens)}</span></div>
+        <div><span class="k">Generated</span><span class="v">${fmt(r.outputTokens)}</span></div>
+        <div><span class="k">Tool calls</span><span class="v">${fmt(r.toolCalls)}</span></div>
+        <div><span class="k">Turns</span><span class="v">${fmt(r.turns)}</span></div>
+        <div><span class="k">Duration</span><span class="v">${dur(r.durationMs)}</span></div>
+        <div><span class="k">Last write</span><span class="v">${ago(r.lastActivityAt)} ago</span></div>
+      </div>
+      ${r.own&&r.own.length?`<div class="files"><b>Files only this run touched</b>${r.own.slice(0,8).map(f=>esc(f)).join("<br>")}${r.own.length>8?`<br>+${r.own.length-8} more`:""}</div>`:""}
+    </article>`).join(""):'<div class="empty">No runs in this session.</div>';
+
+  document.getElementById("lifetime").innerHTML=`
+    <div class="stat"><span class="k">Runs, all time</span><div class="v">${fmt(L.runs)}</div>
+      <span class="s">across ${fmt(L.sessions)} sessions</span></div>
+    <div class="stat"><span class="k">Tokens</span><div class="v">${fmt(L.tokens)}</div>
+      <span class="s">${fmt(L.outputTokens)} generated</span></div>
+    <div class="stat"><span class="k">Tool calls</span><div class="v">${fmt(L.toolCalls)}</div><span class="s">all sessions</span></div>
+    <div class="stat"><span class="k">Agent time</span><div class="v">${Math.round(L.agentSeconds/60)}m</div>
+      <span class="s">summed, not wall-clock</span></div>`;
+
+  const peak=Math.max(1,...d.sessions.flatMap(s=>s.runs.map(r=>r.tokens)));
+  const list=document.getElementById("hist");
+  list.innerHTML=d.sessions.map(s=>`
+    <div class="hs">
+      <div class="hh"><b>${esc(String(s.startedAt).slice(0,16).replace("T"," "))}</b>
+        ${s.id===(cur&&cur.id)?'<span class="tag running">current</span>':""}
+        <span class="m">${s.runs.length} runs · ${fmt(s.runs.reduce((n,r)=>n+r.tokens,0))} tokens · peak ${s.concurrency.peak} concurrent</span></div>
+      ${s.shared.length?`<div style="margin:2px 0 10px;padding:6px 0;border-top:1px solid var(--grid);border-bottom:1px solid var(--grid)"><svg data-s="${esc(s.id)}"></svg></div>`:""}
+      ${s.runs.map(r=>`<div class="hr2"><span class="nm">${esc(r.name)}</span>
+        <span class="ty">${esc(r.kind||"—")}</span>
+        <span class="bar2"><i style="width:${Math.max(2,r.tokens/peak*100)}%;background:${tone(r)}"></i></span>
+        <span class="tk">${fmt(r.tokens)}</span><span class="du">${dur(r.durationMs)}</span></div>`).join("")}
+    </div>`).join("")||'<div class="empty">No history yet.</div>';
+  for(const s of d.sessions){
+    if(!s.shared.length)continue;
+    graph(s.runs,s.shared,list.querySelector(`svg[data-s="${s.id}"]`),true);
+  }
+}
+
+async function tick(){
+  let d;
+  try{
+    const res=await fetch("/api/state",{cache:"no-store"});
+    if(!res.ok)throw new Error("HTTP "+res.status);
+    d=await res.json();
+  }catch(e){
+    fails++;setStatus(`unreachable (${fails}) — is agenttrace still running?`,"error");return;
+  }
+  fails=0;last=d;
+
+  if(d.uiVersion&&LOADED_UI!=="__UI_"+"VERSION__"&&d.uiVersion!==LOADED_UI&&!document.getElementById("stale")){
+    bar.insertAdjacentHTML("afterend",
+      `<div id="stale" class="note"><b>This page is out of date.</b> agenttrace has been updated since you opened it — reload.</div>`);
+  }
+
+  const fp=JSON.stringify([d.lifetime,(d.current?d.current.runs:[]).map(r=>[r.id,r.tokens,r.status])]);
+  if(fp!==fingerprint){fingerprint=fp;changedAt=Date.now()}
+
+  let broke=null;
+  try{draw(d)}catch(err){console.error("render failed:",err);broke="render"}
+
+  const quiet=Math.round((Date.now()-changedAt)/1000);
+  const note=quiet>20?` · unchanged for ${quiet<60?quiet+"s":Math.round(quiet/60)+"m"}`:" · updated";
+  setStatus(`live · ${new Date().toLocaleTimeString()}${broke?" · "+broke+" failed":note}`,broke?"stale":"ok");
+  pulse();
+}
+tick();setInterval(tick,4000);
+addEventListener("resize",()=>{if(last)draw(last)});
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)tick()});
+</script>
+</body>
+</html>
