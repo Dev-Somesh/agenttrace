@@ -185,14 +185,26 @@ or the tool will re-parse tens of megabytes a minute.
 
 ## Read the badge, not just the local run
 
-The README carries a CI badge and `main` requires the matrix to pass before a
-merge. Both exist because of a real failure: the CI matrix was added in dea6350
+The README carries a CI badge. Branch protection was attempted and is NOT in
+place — GitHub requires Pro for protected branches on a private repo, so the
+badge is the only signal. If this repo goes public, add required status checks
+on `main` for Node 18/20/22; until then a red run only shows on the badge.
+
+It exists because of a real failure: the CI matrix was added in dea6350
 and did not pass once until 7a5d991 — five consecutive red runs — while every
 report said green, because `npm test` succeeded locally on Node 23.
 
-A gate nobody reads is not a gate. The badge makes red visible on the repo page;
-branch protection makes it block. Do not remove either to unblock a push — fix
-the run.
+A gate nobody reads is not a gate. The badge makes red visible on the repo
+page. Do not remove it to unblock a push — fix the run.
+
+**Staleness has two forms and needs two messages.** The build hash covers the
+UI *and* the server sources, because hashing the UI alone left a blind spot: a
+process started before a fix keeps serving stale logic while the UI hash still
+matches, so the page looks healthy and reports wrong data. That happened — a
+console ran 29 minutes past a landed fix and nothing indicated it. `serverStale`
+in the payload compares the build on disk against the one the process booted
+with, and the page says "restart the server" rather than "reload", because
+reloading cannot fix it.
 
 ## CI enforces four claims
 

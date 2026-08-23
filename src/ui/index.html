@@ -655,6 +655,12 @@ async function tick(){
   }
   fails=0;last=d;
 
+  // Two different staleness problems, two different remedies. Reloading will
+  // not fix a server running code from before a change.
+  if(d.serverStale&&!document.getElementById("stale-server")){
+    bar.insertAdjacentHTML("afterend",
+      `<div id="stale-server" class="note" style="border-left-color:var(--alert)"><b>This server is running old code.</b> agenttrace changed on disk after it started, so what you are seeing may be wrong. Restart it — reloading this page will not help.</div>`);
+  }
   if(d.uiVersion&&LOADED_UI!=="__UI_"+"VERSION__"&&d.uiVersion!==LOADED_UI&&!document.getElementById("stale")){
     bar.insertAdjacentHTML("afterend",
       `<div id="stale" class="note"><b>This page is out of date.</b> agenttrace has been updated since you opened it — reload.</div>`);

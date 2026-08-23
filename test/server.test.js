@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createApp } from "../src/server.js";
@@ -39,4 +40,23 @@ test("setLan marks every listed URL live, then off again", async () => {
   } finally {
     await app.close();
   }
+});
+
+test("the build hash covers server sources, not just the UI", async () => {
+  // Hashing the UI alone left a blind spot: a process started before a fix
+  // keeps serving stale logic while the UI hash still matches, so the page
+  // looks healthy and reports wrong data. That happened for 29 minutes.
+  const src = await readFile(new URL("../src/server.js", import.meta.url), "utf8");
+  assert.match(src, /BUILD_FILES/, "build hash must be computed over a file list");
+  for (const f of ["server.js", "analyse.js", "claude-code.js"]) {
+    assert.ok(src.includes(f), `${f} must be part of the build hash`);
+  }
+});
+
+test("state reports whether the server itself is stale", async () => {
+  const src = await readFile(new URL("../src/server.js", import.meta.url), "utf8");
+  assert.match(src, /serverStale/, "payload must expose serverStale");
+  const ui = await readFile(new URL("../src/ui/index.html", import.meta.url), "utf8");
+  // Reloading cannot fix a stale process — the message must not say "reload".
+  assert.match(ui, /restart it/i, "stale-server message must say restart, not reload");
 });

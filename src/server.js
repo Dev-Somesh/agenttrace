@@ -24,19 +24,48 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const UI = path.join(here, "ui", "index.html");
 
 /**
- * Hash of the served UI.
+ * Hash of the running build — UI *and* server sources.
  *
  * A browser tab keeps whatever script it loaded with, so a page opened before
  * an update runs old code indefinitely with no way to tell. The page compares
  * this against its own build stamp and offers a reload.
+ *
+ * The server files are included because hashing the UI alone left a blind
+ * spot: a long-running process started before a fix keeps serving stale logic
+ * while the UI hash still matches, so the page looks entirely healthy and
+ * reports wrong data. That happened — a console ran for 29 minutes past a fix
+ * that had already landed, and nothing indicated it.
+ *
+ * This makes the mismatch visible in the browser. It cannot restart the
+ * process, so the message says to restart the server, not to reload the page.
  */
+const BUILD_FILES = [
+  UI,
+  path.join(here, "server.js"),
+  path.join(here, "analyse.js"),
+  path.join(here, "sources", "index.js"),
+  path.join(here, "sources", "claude-code.js"),
+  path.join(here, "sources", "types.js"),
+];
+
 function uiVersion() {
-  try {
-    return createHash("sha1").update(fs.readFileSync(UI)).digest("hex").slice(0, 10);
-  } catch {
-    return "unknown";
+  const hash = createHash("sha1");
+  for (const file of BUILD_FILES) {
+    try {
+      hash.update(fs.readFileSync(file));
+    } catch {
+      hash.update(`missing:${file}`);
+    }
   }
+  return hash.digest("hex").slice(0, 10);
 }
+
+/**
+ * The build on disk right now, versus the one this process started with.
+ * They differ when the source changed after the server booted.
+ */
+const STARTED_WITH = uiVersion();
+export const buildDrifted = () => uiVersion() !== STARTED_WITH;
 
 export function buildState(cwd, { docs = null, since = null, access = null } = {}) {
   const { sessions: found, problems } = collectSessions(cwd);
@@ -91,6 +120,9 @@ export function buildState(cwd, { docs = null, since = null, access = null } = {
   return {
     generatedAt: new Date().toISOString(),
     uiVersion: uiVersion(),
+    // True when the source changed after this process started — the page can
+    // then say "restart the server", which reloading will never fix.
+    serverStale: buildDrifted(),
     cwd,
     project: projectName(cwd),
     since: since || null,
