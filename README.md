@@ -1,5 +1,7 @@
 # agenttrace
 
+![agenttrace](docs/screenshots/agenttrace-banner.png)
+
 [![CI](https://github.com/Dev-Somesh/agenttrace/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Dev-Somesh/agenttrace/actions/workflows/ci.yml)
 
 > Published as **`@dev-somesh/agenttrace`**. Unrelated projects publish under
