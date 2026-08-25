@@ -1,8 +1,11 @@
 # agenttrace
 
-![agenttrace](docs/screenshots/agenttrace-banner.png)
+![agenttrace](docs/screenshots/banner.png)
 
 [![CI](https://github.com/Dev-Somesh/agenttrace/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Dev-Somesh/agenttrace/actions/workflows/ci.yml)
+[![Node](https://img.shields.io/badge/node-%E2%89%A518-3DDC97)](https://nodejs.org)
+[![Dependencies](https://img.shields.io/badge/dependencies-0-3DDC97)](package.json)
+[![Licence](https://img.shields.io/badge/licence-MIT-38BDF8)](LICENSE)
 
 > Published as **`@dev-somesh/agenttrace`**. Unrelated projects publish under
 > `@agenttrace/*` and `agent-trace`; both sit in the request path and require
@@ -27,7 +30,7 @@ Opens a local console at `http://127.0.0.1:4180` for the project you ran it in.
 The page names that project and lists every runner and model that has a session
 on it — two tools in two chats, both shown.
 
-![Shared files: which runs touched the same file](docs/screenshots/portfolio-graph.png)
+![Shared files: which runs touched the same file](docs/screenshots/console-shared-files.png)
 
 *Runs on the left, files two or more of them touched on the right. Every edge
 was observed in a transcript — a run appears against a file because it opened
@@ -135,31 +138,31 @@ working the same ground.
 
 ## The console
 
-Four tabs. These are real sessions on a real project — two runners, six
-sessions, fourteen runs.
+Four tabs. These are real sessions on a working project — two runners, six
+sessions, fourteen runs, captured from an actual day's work.
 
 **Now** — what the current conversation spent, what it delegated, and whether
 the runs actually overlapped.
 
-![Now tab](docs/screenshots/portfolio-now.png)
+![Now tab](docs/screenshots/console-now.png)
 
 **History** — every session found for the project, newest write first, each
 with its own runs and shared-file graph.
 
-![History tab](docs/screenshots/portfolio-history.png)
+![History tab](docs/screenshots/console-history.png)
 
 **Docs** — plans, skills, agents, commands and rules the runner keeps beside
 this project, rendered in place.
 
-![Docs tab](docs/screenshots/portfolio-docs.png)
+![Docs tab](docs/screenshots/console-docs.png)
 
 ### On a project with almost nothing to show
 
-Pointed at a repo with one Cursor run and no subagents, the console says so
+Pointed at a repository with a single run and no subagents, the console says so
 rather than inventing activity. Cursor records no token usage, so those figures
 read `—`, not `0` — unmeasured, not free.
 
-![agenttrace pointed at its own repository](docs/screenshots/agenttrace-now.png)
+![A project with a single run](docs/screenshots/quiet-now.png)
 
 <details>
 <summary>The other tabs on that same sparse project</summary>
@@ -168,13 +171,101 @@ A graph with nothing shared, a history of one session, and a Docs tab falling
 back to shipped samples because the project keeps none of its own. Each says
 what it found rather than rendering blank.
 
-![Graph, nothing shared](docs/screenshots/agenttrace-graph.png)
+![Graph, nothing shared](docs/screenshots/quiet-graph.png)
 
-![History, one session](docs/screenshots/agenttrace-history.png)
+![History, one session](docs/screenshots/quiet-history.png)
 
-![Docs, falling back to samples](docs/screenshots/agenttrace-docs.png)
+![Docs, falling back to samples](docs/screenshots/quiet-docs.png)
 
 </details>
+
+## If a coding agent is setting this up
+
+Point your agent at this section. It is written to be followed literally.
+
+**Copy-paste this to your agent:**
+
+> Set up agenttrace for this project and open the dashboard. Follow the
+> instructions in the "If a coding agent is setting this up" section of
+> https://github.com/Dev-Somesh/agenttrace
+
+### Instructions for the agent
+
+You are setting up a read-only local dashboard. It needs no API key, no
+account, and no configuration. Do not modify the user's project.
+
+**1. Check the runtime.** `node --version` must be 18 or newer. Do not run
+`npm install` — this package has no dependencies and the repository is the
+program.
+
+**2. Start it in the background.** The server runs until stopped, so a
+foreground call will block you until you time out. Use `--detach`, which spawns
+the server, prints the URL and pid, and returns immediately:
+
+```bash
+cd /path/to/the/users/project
+npx -y @dev-somesh/agenttrace --detach
+```
+
+Expected output, with the pid varying:
+
+```
+agenttrace running in background (pid 13988)
+  project   your-project
+  this machine only      http://127.0.0.1:4180
+  Stop from the page or: kill 13988
+```
+
+**3. Confirm it is serving** before telling the user it is ready:
+
+```bash
+curl -s http://127.0.0.1:4180/api/state | head -c 200
+```
+
+**4. Open the dashboard on the user's machine.**
+
+```bash
+open http://127.0.0.1:4180        # macOS
+xdg-open http://127.0.0.1:4180    # Linux
+start http://127.0.0.1:4180       # Windows
+```
+
+If you cannot open a browser — you are on a remote host, in a container, or
+have no display — say so and give the user the URL to open themselves. Do not
+use `--lan` or `--tunnel` to work around it; see the constraint below.
+
+**5. Report what it found.** `--sources` lists the runners detected. If it
+prints nothing, the machine has no supported agent transcripts and the
+dashboard will be empty — that is not a failure to debug, it is the honest
+answer. Tell the user rather than trying to generate data.
+
+### Handling the common failures
+
+| What you see | What it means | What to do |
+|---|---|---|
+| `listen EADDRINUSE: ... 127.0.0.1:4180` | Something already holds the port. There is no automatic fallback. | Retry with `--port 4181`, or check whether an agenttrace is already running and just open it. |
+| Dashboard loads but every panel is empty | No transcripts for this directory | Run `--sources`. Confirm the user has run a supported agent **in this project**. |
+| Tokens show `—` rather than a number | That runner records no usage | Correct behaviour, not a bug. `—` means unmeasured; `0` would mean free. |
+| A red "running old code" banner | The server started before the files changed | Restart the process. Reloading the page will not help. |
+
+### Constraints — do not violate these
+
+- **Never pass `--lan` or `--tunnel` unless the user explicitly asks.** They
+  expose the console beyond the machine. Transcripts contain prompts, file
+  paths, and sometimes secrets typed into a shell.
+- **Never commit anything you create here.** If you add an `agenttrace.json`
+  for prices, tell the user it exists.
+- **Do not paste dashboard contents into a public issue or PR** without asking.
+  The `--export` snapshot deliberately strips documents for this reason.
+
+### If you cannot open a browser at all
+
+Skip the server. `--json` prints everything and exits, which is also how to
+assert on cost in CI:
+
+```bash
+npx -y @dev-somesh/agenttrace --json --since 24h
+```
 
 ## Privacy
 
@@ -275,6 +366,12 @@ why cache reads are excluded from token counts but included in cost, why an
 unlisted model reports no price rather than a guessed one, and why the adapter
 boundary is enforced by CI.
 
+## Author
+
+Somesh Bhardwaj — [someshbhardwaj.dev](https://someshbhardwaj.dev) ·
+[LinkedIn](https://www.linkedin.com/in/ersomeshbhardwaj/) ·
+[GitHub](https://github.com/Dev-Somesh)
+
 ## Licence
 
-MIT © Somesh Bhardwaj
+MIT © [Somesh Bhardwaj](https://someshbhardwaj.dev)
