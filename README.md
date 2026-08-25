@@ -151,6 +151,8 @@ node src/cli.js --dir /path/to/your-project
 | `--since 24h` | Only runs active in this window |
 | `--export out.html` | Self-contained snapshot, shareable in a PR |
 | `--detach` | Keep serving after the terminal closes |
+| `--install-skill` | Teach the coding agents on this machine to use it (`all` for every one) |
+| `--skill` | Print those instructions to stdout |
 | `--lan` | Reachable on the same Wi-Fi (opt-in) |
 | `--tunnel` | Also start `ngrok` / `cloudflared` if installed (opt-in) |
 
@@ -246,8 +248,36 @@ a tunnel client and does not start one unless you ask.
 
 ## For coding agents
 
-Ask Cursor, Claude Code, Codex, Copilot or any other agent to set this up by
-pasting:
+### Install the skill
+
+Teach the agents on your machine to run and read this correctly, once:
+
+```bash
+npx @dev-somesh/agenttrace --install-skill        # agents detected here
+npx @dev-somesh/agenttrace --install-skill all    # every supported agent
+npx @dev-somesh/agenttrace --skill                # print it, paste it anywhere
+```
+
+It writes a short instruction file wherever each agent already looks:
+
+| Agent | File |
+|---|---|
+| Claude Code | `.claude/skills/agenttrace/SKILL.md` |
+| Cursor | `.cursor/rules/agenttrace.mdc` |
+| Codex | `.agents/agenttrace.md` (referenced from `AGENTS.md`) |
+| Gemini CLI | `.gemini/agenttrace.md` (referenced from `GEMINI.md`) |
+| GitHub Copilot | `.github/instructions/agenttrace.instructions.md` |
+| Kiro | `.kiro/steering/agenttrace.md` |
+
+An existing file is never overwritten. Being listed here is a **weaker claim
+than being a supported runner**: it means agenttrace can teach that agent to
+use it, not that it can read that agent's transcripts.
+
+Then just ask:
+
+> Set up agenttrace for this project and open the dashboard.
+
+### Or paste this without installing anything
 
 > Set up agenttrace for this project and open the dashboard. Follow the
 > "For coding agents" section of

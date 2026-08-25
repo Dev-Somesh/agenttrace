@@ -72,3 +72,4 @@ export function collectSessions(cwd) {
   sessions.sort((a, b) => recency(b).localeCompare(recency(a)));
   return { sessions, problems };
 }
+

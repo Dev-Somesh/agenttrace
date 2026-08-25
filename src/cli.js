@@ -15,6 +15,8 @@ import { availableSources } from "./sources/index.js";
 import { parseSince } from "./analyse.js";
 import { snapshotHtml } from "./export.js";
 import { accessInfo, projectName } from "./access.js";
+import { installSkill, SKILL_BODY } from "./skill.js";
+import { skillTargets } from "./sources/skills.js";
 
 const argv = process.argv.slice(2);
 const flag = (name, fallback) => {
@@ -44,6 +46,10 @@ if (has("help") || has("h")) {
     npx agenttrace --lan           bind all interfaces (phone on the same Wi-Fi)
     npx agenttrace --tunnel        also start ngrok / cloudflared if installed
     npx agenttrace --detach        keep serving after this terminal closes
+    npx agenttrace --install-skill teach your coding agents to use this
+                                   (--install-skill all covers every agent,
+                                    not just the ones on this machine)
+    npx agenttrace --skill         print those instructions to stdout
 
   Default bind is 127.0.0.1. --lan, --tunnel and Forward port are opt-in:
   transcripts can contain secrets, and anyone who can open a live URL can read them.
@@ -98,6 +104,35 @@ if (has("since") && parseSince(since) == null) {
   process.exit(1);
 }
 
+if (has("skill")) {
+  console.log(SKILL_BODY);
+  process.exit(0);
+}
+
+if (has("install-skill")) {
+  const all = flag("install-skill", "") === "all" || argv.includes("all");
+  const targets = skillTargets({ all, cwd });
+  if (!targets.length) {
+    console.error("No coding agents detected on this machine.");
+    console.error("Use --install-skill all to write for every supported agent,");
+    console.error("or --skill to print the instructions and paste them yourself.");
+    process.exit(1);
+  }
+  const results = installSkill(cwd, targets);
+  console.log(`\n  Taught ${results.length} agent${results.length === 1 ? "" : "s"} to use agenttrace\n`);
+  for (const r of results) {
+    const mark = r.status === "kept" ? "already there" : r.status;
+    console.log(`  ${r.label.padEnd(16)} ${r.file}  (${mark})`);
+  }
+  const notes = targets.filter((t) => t.note);
+  if (notes.length) {
+    console.log("");
+    for (const t of notes) console.log(`  ${t.label}: ${t.note}`);
+  }
+  console.log(`\n  Ask your agent: "set up agenttrace and open the dashboard"\n`);
+  process.exit(0);
+}
+
 if (has("json")) {
   console.log(JSON.stringify(buildState(cwd, { docs, since }), null, 2));
   process.exit(0);
@@ -120,6 +155,11 @@ if (!state.sessions.length) {
   process.exit(1);
 }
 
+/** True once any agent skill has been written into this project. */
+function skillsInstalled(dir) {
+  return skillTargets({ all: true, cwd: dir }).some((t) => fs.existsSync(path.join(dir, t.file)));
+}
+
 function printAccess(info) {
   const name = info.project || projectName(cwd);
   console.log(`  project   ${name}`);
@@ -139,11 +179,20 @@ app.start().then(async (info) => {
     info = app.access();
     if (!url && info.tunnel?.error) console.error(`  tunnel: ${info.tunnel.error}`);
   }
-  const { runs, sessions, tokens, costUsd } = state.lifetime;
+  const { runs, sessions, totalTokens, mainTokens, tokens, totalCostUsd } = state.lifetime;
   console.log(`\n  agenttrace\n`);
   printAccess(info);
-  const cost = costUsd == null ? "" : ` · ~$${costUsd.toFixed(2)}`;
-  console.log(`\n  ${runs} runs across ${sessions} sessions · ${tokens.toLocaleString()} tokens${cost}`);
+
+  // totalTokens, not tokens: `tokens` counts only what was delegated, so a
+  // session where the main agent did the work itself reported 0 here while the
+  // console showed millions.
+  const cost = totalCostUsd == null ? "" : ` · ~$${totalCostUsd.toFixed(2)}`;
+  const split = runs ? ` (${mainTokens.toLocaleString()} conversation · ${tokens.toLocaleString()} delegated)` : "";
+  console.log(
+    `\n  ${sessions} session${sessions === 1 ? "" : "s"} · ${runs} delegated run${runs === 1 ? "" : "s"} · ` +
+      `${totalTokens.toLocaleString()} tokens${cost}`
+  );
+  if (split) console.log(`  ${split.trim()}`);
   if ((state.across || []).length) {
     const line = state.across
       .map((a) => `${a.sourceLabel}${a.model ? ` · ${a.model}` : " · model not recorded"}`)
@@ -160,8 +209,15 @@ app.start().then(async (info) => {
   } else if (info.lan) {
     console.log(`\n  Shared on the local network. Stop sharing from the page.\n`);
   } else {
-    console.log(`\n  Local files only. Ctrl+C to stop, or Stop console on the page.\n`);
+    console.log(`\n  Local files only. Ctrl+C to stop, or Stop console on the page.`);
   }
+
+  const dash = info.urls.find((u) => u.live)?.url || `http://127.0.0.1:${info.port || port}`;
+  console.log(`\n  Console ready → ${dash}`);
+  if (!skillsInstalled(cwd)) {
+    console.log(`  Teach your coding agents to use it: npx agenttrace --install-skill`);
+  }
+  console.log(`  Useful? A star helps people find it: https://github.com/Dev-Somesh/agenttrace\n`);
 }).catch((err) => {
   console.error(err.message || err);
   process.exit(1);
