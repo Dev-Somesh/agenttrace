@@ -1,0 +1,143 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+:root{
+  --bg:#080B0F; --panel:#0D1218; --panel-2:#111823; --grid:#151E29;
+  --line:#1E2A38; --ink:#DDE5E9; --dim:#6E8291; --faint:#3D4C5A;
+  --signal:#3DDC97; --cyan:#38BDF8; --violet:#A78BFA;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:ui-sans-serif,system-ui,-apple-system,"Helvetica Neue",sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#222;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.card{background:var(--bg);color:var(--ink);position:relative;overflow:hidden;margin:20px}
+.card::before{content:"";position:absolute;inset:0;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:56px 56px;opacity:.55}
+.in{position:relative;height:100%;display:flex;flex-direction:column;justify-content:center}
+.mark{display:flex;align-items:baseline;gap:12px}
+.mark .n{font-size:1.55rem;font-weight:700;letter-spacing:-.03em}
+.mark .n b{color:var(--signal)}
+.mark .c{width:9px;height:20px;background:var(--signal);display:inline-block;transform:translateY(2px)}
+h1{font-family:var(--sans);font-weight:800;letter-spacing:-.03em;line-height:1.06}
+.sub{font-family:var(--sans);color:var(--dim);line-height:1.5}
+.url{color:var(--faint);letter-spacing:.03em}
+.lane{display:grid;grid-template-columns:1fr 54px;align-items:center;gap:10px;margin-bottom:7px;font-size:.62rem}
+.track{height:8px;background:var(--panel-2);position:relative}
+.track i{position:absolute;top:0;bottom:0}
+.lane .t{color:var(--faint);text-align:right}
+.kpi{display:flex;gap:34px}
+.kpi .k{font-size:.58rem;letter-spacing:.14em;color:var(--dim);display:block;margin-bottom:4px}
+.kpi .v{font-size:1.5rem;font-weight:700;font-family:var(--sans)}
+.kpi .v.g{color:var(--signal)}
+.kpi .s{font-size:.56rem;color:var(--faint);display:block;margin-top:2px}
+.pill{display:inline-block;border:1px solid var(--line);background:var(--panel);
+  padding:9px 15px;font-size:.82rem}
+.pill .p{color:var(--signal)}
+
+/* 1200x627 — LinkedIn / OG */
+#li{width:1200px;height:627px}
+#li .in{padding:52px 60px;justify-content:center}
+#li h1{font-size:2.32rem;margin:20px 0 16px}
+#li .sub{font-size:1.0rem;max-width:38ch}
+#li .right{position:absolute;right:60px;top:50%;transform:translateY(-50%);width:440px}
+#li .left{max-width:600px}
+
+/* 1600x900 — X / 16:9 */
+#x{width:1600px;height:900px}
+#x .in{padding:76px 88px;justify-content:center}
+#x h1{font-size:3.5rem;margin:24px 0 22px;max-width:15ch}
+#x .sub{font-size:1.24rem;max-width:34ch}
+#x .kpi{flex-direction:column;gap:30px;position:absolute;right:88px;top:50%;transform:translateY(-50%);border-left:1px solid var(--line);padding-left:44px}
+#x .kpi .v{font-size:2.6rem}
+
+/* 1280x640 — GitHub social preview */
+#gh{width:1280px;height:640px}
+#gh .in{padding:64px 72px;align-items:center;text-align:center}
+#gh h1{font-size:2.9rem;margin:22px 0 16px}
+#gh .sub{font-size:1.1rem;max-width:52ch;margin:0 auto}
+#gh .kpi{justify-content:center;margin-top:38px}
+
+/* 1080x1080 — square */
+#sq{width:1080px;height:1080px}
+#sq .in{padding:80px 72px}
+#sq h1{font-size:3.1rem;margin:26px 0 20px}
+#sq .sub{font-size:1.2rem;max-width:26ch}
+#sq .rows{margin-top:48px}
+#sq .kpi{margin-top:44px}
+#sq .kpi .v{font-size:2rem}
+</style></head><body>
+
+<!-- LinkedIn 1200x627 -->
+<div class="card" id="li"><div class="in">
+  <div class="left">
+    <div class="mark"><span class="n">agent<b>trace</b></span><span class="c"></span></div>
+    <h1>Starting together is not<br>running together.</h1>
+    <p class="sub">agenttrace reads the transcripts your runner already wrote and
+      shows what actually overlapped, what it cost, and which files two runs both
+      touched.</p>
+    <div style="margin-top:26px"><span class="pill"><span class="p">$</span> npx @dev-somesh/agenttrace</span></div>
+  </div>
+  <div class="right">
+    <div class="lane"><span class="track"><i style="left:0%;width:44%;background:var(--violet)"></i></span><span class="t">470k</span></div>
+    <div class="lane"><span class="track"><i style="left:2%;width:38%;background:var(--violet)"></i></span><span class="t">298k</span></div>
+    <div class="lane"><span class="track"><i style="left:3%;width:26%;background:var(--violet)"></i></span><span class="t">154k</span></div>
+    <div class="lane"><span class="track"><i style="left:1%;width:49%;background:var(--violet)"></i></span><span class="t">196k</span></div>
+    <div class="lane"><span class="track"><i style="left:52%;width:34%;background:var(--cyan)"></i></span><span class="t">315k</span></div>
+    <div class="lane"><span class="track"><i style="left:55%;width:30%;background:var(--cyan)"></i></span><span class="t">164k</span></div>
+    <div class="kpi" style="margin-top:26px">
+      <div><span class="k">PEAK CONCURRENT</span><span class="v g">4</span><span class="s">actually overlapping</span></div>
+      <div><span class="k">SHARED FILES</span><span class="v">12</span><span class="s">two or more runs</span></div>
+    </div>
+  </div>
+</div></div>
+
+<!-- X 1600x900 -->
+<div class="card" id="x"><div class="in">
+  <div class="mark"><span class="n">agent<b>trace</b></span><span class="c"></span></div>
+  <h1>Your agent cost is probably wrong.</h1>
+  <p class="sub">Cache reads were 97% of the tokens in this session. They are
+    billed at a tenth of the input rate — which is small per token and most of
+    the invoice. Price them at zero and the total still looks plausible.</p>
+  <div class="kpi">
+    <div><span class="k">HEADLINE TOKENS</span><span class="v">505k</span><span class="s">what gets reported</span></div>
+    <div><span class="k">CACHE READS</span><span class="v g">21.2M</span><span class="s">billed, usually invisible</span></div>
+    <div><span class="k">TRUE COST</span><span class="v">$16.54</span><span class="s">$10.62 of it cache</span></div>
+  </div>
+  <div style="margin-top:46px"><span class="pill"><span class="p">$</span> npx @dev-somesh/agenttrace</span></div>
+</div></div>
+
+<!-- GitHub 1280x640 -->
+<div class="card" id="gh"><div class="in">
+  <div class="mark"><span class="n">agent<b>trace</b></span><span class="c"></span></div>
+  <h1>See what your coding<br>agents actually did.</h1>
+  <p class="sub">Reads the transcripts your runner already wrote. Nothing to
+    instrument, no wrapper, no account — so it works on runs that already finished.</p>
+  <div class="kpi">
+    <div><span class="k">DEPENDENCIES</span><span class="v g">0</span></div>
+    <div><span class="k">NETWORK CALLS</span><span class="v g">0</span></div>
+    <div><span class="k">NODE</span><span class="v">18+</span></div>
+    <div><span class="k">LICENCE</span><span class="v">MIT</span></div>
+  </div>
+  <p class="url" style="margin-top:34px;font-size:.86rem">github.com/Dev-Somesh/agenttrace</p>
+</div></div>
+
+<!-- Square 1080x1080 -->
+<div class="card" id="sq"><div class="in">
+  <div class="mark"><span class="n">agent<b>trace</b></span><span class="c"></span></div>
+  <h1>Did they<br>actually run<br>in parallel?</h1>
+  <p class="sub">Launching four agents together is not the same as four agents overlapping.</p>
+  <div class="rows">
+    <div class="lane"><span class="track"><i style="left:0%;width:44%;background:var(--violet)"></i></span><span class="t">470k</span></div>
+    <div class="lane"><span class="track"><i style="left:2%;width:38%;background:var(--violet)"></i></span><span class="t">298k</span></div>
+    <div class="lane"><span class="track"><i style="left:3%;width:26%;background:var(--violet)"></i></span><span class="t">154k</span></div>
+    <div class="lane"><span class="track"><i style="left:1%;width:49%;background:var(--violet)"></i></span><span class="t">196k</span></div>
+    <div class="lane"><span class="track"><i style="left:52%;width:34%;background:var(--cyan)"></i></span><span class="t">315k</span></div>
+    <div class="lane"><span class="track"><i style="left:55%;width:30%;background:var(--cyan)"></i></span><span class="t">164k</span></div>
+  </div>
+  <div class="kpi">
+    <div><span class="k">PEAK CONCURRENT</span><span class="v g">4</span><span class="s">observed, not declared</span></div>
+    <div><span class="k">SHARED FILES</span><span class="v">12</span><span class="s">two or more runs</span></div>
+  </div>
+  <p class="url" style="margin-top:40px;font-size:.8rem">npx @dev-somesh/agenttrace</p>
+</div></div>
+
+</body></html>
