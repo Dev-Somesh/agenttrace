@@ -29,7 +29,8 @@ Opens a console at `http://127.0.0.1:4180` for the project you ran it in.
 > wrote, so it works on runs that have already finished.
 
 **[What you get](#what-you-get)** · **[Install](#install)** ·
-**[Usage](#usage)** · **[Configuration](#configuration)** ·
+**[Supported agents](#supported-agents)** · **[Usage](#usage)** ·
+**[Configuration](#configuration)** ·
 **[How the numbers work](#how-the-numbers-work)** · **[Privacy](#privacy)** ·
 **[For coding agents](#for-coding-agents)** ·
 **[Adding a runner](#adding-a-runner)**
@@ -128,13 +129,29 @@ cd agenttrace
 node src/cli.js --dir /path/to/your-project
 ```
 
-### Supported runners
+### Supported agents
 
-| Runner | Status |
-|---|---|
-| **Claude Code** | Full support |
-| **Cursor** | Full support. Its transcripts record no token usage, so those figures read `—` rather than a number |
-| **Anything else** | The adapter interface is public — [add a runner](#adding-a-runner) |
+Two different things are worth separating. **Measuring** an agent means reading
+its transcripts and reporting what it spent. **Teaching** one means installing a
+skill so it knows how to run the console — which works even for agents this tool
+cannot measure.
+
+| Agent | Measured | Teachable |
+|---|---|---|
+| **Claude Code** | Yes | Yes |
+| **Cursor** | Yes — but its transcripts record no token usage, so those figures read `—` | Yes |
+| **Codex** | Not yet | Yes |
+| **Gemini CLI** | Not yet | Yes |
+| **GitHub Copilot** | Not yet | Yes |
+| **Kiro** | Not yet | Yes |
+| Anything else | [Add a runner](#adding-a-runner) — the adapter interface is public | `--skill` prints the instructions to paste anywhere |
+
+"Not yet" means exactly that: nobody has written the adapter. The transcripts
+are on disk in each case, and a source is one file — see
+[adding a runner](#adding-a-runner).
+
+`--sources` lists what it can measure on your machine.
+[`--install-skill`](#for-coding-agents) covers what it can teach.
 
 ---
 
@@ -269,9 +286,8 @@ It writes a short instruction file wherever each agent already looks:
 | GitHub Copilot | `.github/instructions/agenttrace.instructions.md` |
 | Kiro | `.kiro/steering/agenttrace.md` |
 
-An existing file is never overwritten. Being listed here is a **weaker claim
-than being a supported runner**: it means agenttrace can teach that agent to
-use it, not that it can read that agent's transcripts.
+An existing file is never overwritten. Teachable is a weaker claim than
+measured — see [supported agents](#supported-agents).
 
 Then just ask:
 

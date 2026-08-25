@@ -48,6 +48,36 @@ vendor. `analyse.js`, `server.js` and the UI work only against the normalised
 `Session` and `Run` shapes in `types.js`. If you find yourself writing
 `.claude` anywhere else, the abstraction has leaked.
 
+## Adding a skill target
+
+A **source** is a runner whose transcripts we can read. A **skill target** is an
+agent we can hand instructions to. They are different claims and different
+files, and conflating them would advertise support that does not exist —
+Copilot cannot be measured by this tool and can still be told to run it.
+
+Skill targets live in `src/sources/skills.js`, with every other piece of vendor
+knowledge. A target is a path, a `detect()`, and a `wrap()` that adds whatever
+frontmatter that tool expects:
+
+```js
+{
+  id: "some-agent",
+  label: "Some Agent",
+  file: path.join(".someagent", "rules", "agenttrace.md"),
+  detect: (cwd) => fs.existsSync(home(".someagent")),
+  wrap: (body, m) => yaml({ description: m.description }) + body,
+}
+```
+
+The instructions themselves are in `src/skill.js` and name no vendor. That
+split is not stylistic: the first version of this feature put `.claude` and
+`.cursor` in `src/skill.js` and would have failed the adapter-boundary check.
+A test asserts that file mentions no tool.
+
+`detect()` decides whether `--install-skill` writes for that agent by default,
+so a project does not accumulate configuration directories for tools nobody
+uses. `--install-skill all` ignores detection.
+
 ## Decisions already made — do not silently reverse these
 
 **Cache reads are excluded from token totals — and included in cost.** They
