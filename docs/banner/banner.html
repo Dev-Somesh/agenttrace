@@ -1,0 +1,77 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+:root{
+  --bg:#080B0F; --panel:#0D1218; --panel-2:#111823; --grid:#151E29;
+  --line:#1E2A38; --ink:#DDE5E9; --dim:#6E8291; --faint:#3D4C5A;
+  --signal:#3DDC97; --cyan:#38BDF8; --violet:#A78BFA;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:ui-sans-serif,system-ui,-apple-system,"Helvetica Neue",sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{width:1440px;height:500px;background:var(--bg);color:var(--ink);
+  font-family:var(--mono);font-variant-numeric:tabular-nums;overflow:hidden;position:relative}
+/* the console's own faint grid */
+body::before{content:"";position:absolute;inset:0;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:64px 64px;opacity:.55}
+.wrap{position:relative;height:100%;display:grid;grid-template-columns:1.05fr 1fr;gap:64px;padding:44px 64px;align-items:center}
+
+.mark{display:flex;align-items:baseline;gap:14px;margin-bottom:22px}
+.mark .name{font-family:var(--mono);font-size:2.6rem;font-weight:700;letter-spacing:-.03em}
+.mark .name b{color:var(--signal);font-weight:700}
+.mark .caret{width:12px;height:30px;background:var(--signal);display:inline-block;transform:translateY(3px)}
+
+h1{font-family:var(--sans);font-size:2.7rem;line-height:1.08;letter-spacing:-.03em;
+  font-weight:800;margin-bottom:18px}
+.diff{font-family:var(--sans);font-size:1.06rem;line-height:1.55;color:var(--dim);max-width:40ch;margin-bottom:28px}
+.diff em{color:var(--ink);font-style:normal}
+
+.cmd{display:inline-flex;align-items:center;gap:12px;border:1px solid var(--line);
+  background:var(--panel);padding:13px 20px;font-size:.98rem}
+.cmd .p{color:var(--signal)}
+.cmd .c{color:var(--ink)}
+
+/* signature: a real timeline — overlapping lanes are the whole point */
+.card{border:1px solid var(--line);background:var(--panel);padding:24px 26px 26px}
+.card .hd{display:flex;justify-content:space-between;align-items:baseline;
+  border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:18px}
+.card .hd span{font-size:.66rem;letter-spacing:.16em;color:var(--dim)}
+.lane{display:grid;grid-template-columns:118px 1fr 66px;align-items:center;gap:12px;margin-bottom:9px;font-size:.68rem}
+.lane .n{color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.track{height:9px;background:var(--panel-2);position:relative}
+.track i{position:absolute;top:0;bottom:0;display:block}
+.lane .t{color:var(--faint);text-align:right;font-size:.64rem}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:20px;
+  border-top:1px solid var(--line);padding-top:16px}
+.stat .k{font-size:.6rem;letter-spacing:.14em;color:var(--dim);display:block;margin-bottom:5px}
+.stat .v{font-size:1.32rem;font-weight:700}
+.stat .v.g{color:var(--signal)}
+.stat .s{font-size:.6rem;color:var(--faint);display:block;margin-top:3px}
+.foot{margin-top:26px;font-size:.68rem;color:var(--faint);letter-spacing:.04em}
+</style></head><body><div class="wrap">
+  <div>
+    <div class="mark"><span class="name">agent<b>trace</b></span><span class="caret"></span></div>
+    <h1>See what your coding<br>agents actually did.</h1>
+    <p class="diff"><em>Nothing to instrument.</em> It reads the transcripts your
+      runner already wrote — so it works on runs that already finished.</p>
+    <div class="cmd"><span class="p">$</span><span class="c">npx @dev-somesh/agenttrace</span></div>
+    <div class="foot">github.com/Dev-Somesh/agenttrace · MIT · zero dependencies</div>
+  </div>
+
+  <div class="card">
+    <div class="hd"><span>EXECUTION TIMELINE</span><span>OBSERVED, NOT DECLARED</span></div>
+    <div class="lane"><span class="n">Audit component</span><span class="track"><i style="left:0%;width:41%;background:var(--violet)"></i></span><span class="t">470,038</span></div>
+    <div class="lane"><span class="n">Audit data &amp; SEO</span><span class="track"><i style="left:2%;width:38%;background:var(--violet)"></i></span><span class="t">297,546</span></div>
+    <div class="lane"><span class="n">Audit build</span><span class="track"><i style="left:3%;width:25%;background:var(--violet)"></i></span><span class="t">153,751</span></div>
+    <div class="lane"><span class="n">Design plan</span><span class="track"><i style="left:1%;width:48%;background:var(--violet)"></i></span><span class="t">196,070</span></div>
+    <div class="lane"><span class="n">Hero, method</span><span class="track"><i style="left:44%;width:34%;background:var(--cyan)"></i></span><span class="t">314,566</span></div>
+    <div class="lane"><span class="n">Engagements</span><span class="track"><i style="left:46%;width:29%;background:var(--cyan)"></i></span><span class="t">163,928</span></div>
+    <div class="lane"><span class="n">Navigation</span><span class="track"><i style="left:45%;width:44%;background:var(--cyan)"></i></span><span class="t">296,056</span></div>
+    <div class="lane"><span class="n">Contact</span><span class="track"><i style="left:52%;width:36%;background:var(--cyan)"></i></span><span class="t">201,723</span></div>
+    <div class="stats">
+      <div class="stat"><span class="k">PEAK CONCURRENT</span><span class="v g">4</span><span class="s">actually overlapping</span></div>
+      <div class="stat"><span class="k">TOKENS</span><span class="v">12.1M</span><span class="s">cache reads excluded</span></div>
+      <div class="stat"><span class="k">SHARED FILES</span><span class="v">12</span><span class="s">two or more runs</span></div>
+    </div>
+  </div>
+</div>
+</body></html>
