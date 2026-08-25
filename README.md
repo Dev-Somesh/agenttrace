@@ -35,6 +35,39 @@ it, not because its instructions said it would.*
 
 ---
 
+## Setup
+
+**Requirements.** Node 18 or newer. There are no dependencies, so there is
+nothing else to install.
+
+You also need a supported agent runner that has already written transcripts for
+the project you point at — agenttrace reads what is on disk, it does not create
+it. `--sources` tells you what it found on your machine.
+
+**Run it without installing**
+
+```bash
+cd your-project
+npx @dev-somesh/agenttrace
+```
+
+**Install it**
+
+```bash
+npm install -g @dev-somesh/agenttrace
+agenttrace                     # from any project directory
+```
+
+**Run it from a clone**
+
+```bash
+git clone https://github.com/Dev-Somesh/agenttrace.git
+cd agenttrace
+node src/cli.js --dir /path/to/your-project
+```
+
+No `npm install` step: the repository is the program.
+
 ## What it shows
 
 **Now** — every live session on this project, across runners and models, not
@@ -179,6 +212,33 @@ npx @dev-somesh/agenttrace --detach        # keep serving after the terminal clo
 `--json` makes it scriptable: pipe it into `jq` for cost reporting, or assert on
 it in CI.
 
+## Configuration
+
+Everything is optional. agenttrace runs with no config at all.
+
+**Prices.** Put the rates you actually pay in an `agenttrace.json` beside your
+project:
+
+```json
+{
+  "prices": {
+    "claude-opus-5": { "input": 5, "output": 25 },
+    "your-private-deployment": { "input": 0, "output": 0 }
+  }
+}
+```
+
+Listed models replace the shipped rate, unlisted ones keep it, and a model the
+table has never heard of can be added the same way. A config that cannot be
+parsed is reported on the page rather than ignored. Figures are USD per million
+tokens.
+
+**Which documents to show.** `--docs plans,skills` narrows the Docs tab to those
+collections.
+
+**How far back to look.** `--since 24h` limits every figure to runs active in
+that window, which is what makes `--json` useful as a CI budget assertion.
+
 ## Supported runners
 
 | Runner | Status |
@@ -207,9 +267,13 @@ A source returns sessions of runs, where a run is:
 If your runner records file operations differently, the only work is mapping
 them onto `reads` and `writes`.
 
-## Requirements
+## Contributing
 
-Node 18+. No dependencies.
+[CONTRIBUTING.md](CONTRIBUTING.md) covers the architecture, how to add a runner,
+and the decisions behind the parts of this codebase that look odd on purpose —
+why cache reads are excluded from token counts but included in cost, why an
+unlisted model reports no price rather than a guessed one, and why the adapter
+boundary is enforced by CI.
 
 ## Licence
 
