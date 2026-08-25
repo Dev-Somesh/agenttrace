@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { sharedFiles, ownFiles, lifetime, concurrency, nowSessions, modelsInPlay } from "../src/analyse.js";
+import { sharedFiles, ownFiles, lifetime, concurrency, nowSessions, modelsInPlay, filterSessions } from "../src/analyse.js";
 
 const run = (id, over = {}) => ({
   id, name: id, kind: null, model: null, status: "finished",
@@ -180,4 +180,43 @@ test("sessions are ordered by last write, not by when they started", async () =>
   assert.equal(order([active, noStamp])[0], "no-last");
 
   assert.equal(typeof collectSessions, "function");
+});
+
+// --since is pitched for CI budget assertions, so dropping work silently is the
+// worst thing it can do. It kept a session only if that session had subagent
+// runs inside the window, so a conversation where the main agent did the work
+// itself — no delegation, no runs — disappeared however recent it was.
+test("--since keeps a session whose own conversation was active, not just one that delegated", () => {
+  const now = Date.parse("2026-08-25T12:00:00.000Z");
+  const cutoff = now - 24 * 3600 * 1000;
+
+  const soloRecent = {
+    id: "solo",
+    startedAt: "2026-08-25T09:00:00.000Z",
+    lastActivityAt: "2026-08-25T11:00:00.000Z",
+    totals: { tokens: 3_800_000 },
+    runs: [], // did all the work itself
+  };
+  const soloOld = {
+    id: "solo-old",
+    startedAt: "2026-08-01T09:00:00.000Z",
+    lastActivityAt: "2026-08-01T10:00:00.000Z",
+    totals: { tokens: 5000 },
+    runs: [],
+  };
+  const delegated = {
+    id: "delegated",
+    startedAt: "2026-08-25T10:00:00.000Z",
+    lastActivityAt: "2026-08-25T10:30:00.000Z",
+    totals: { tokens: 1000 },
+    runs: [{ id: "r1", startedAt: "2026-08-25T10:05:00.000Z", lastActivityAt: "2026-08-25T10:25:00.000Z" }],
+  };
+
+  const kept = filterSessions([soloRecent, soloOld, delegated], cutoff).map((s) => s.id);
+  assert.ok(kept.includes("solo"), "a recent session that never delegated must survive");
+  assert.ok(kept.includes("delegated"), "a session with runs in the window still survives");
+  assert.ok(!kept.includes("solo-old"), "a session outside the window is still dropped");
+
+  // and its tokens must reach the totals, or a CI assertion reads zero
+  assert.equal(lifetime(filterSessions([soloRecent], cutoff)).mainTokens, 3_800_000);
 });

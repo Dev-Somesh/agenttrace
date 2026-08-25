@@ -103,15 +103,19 @@ export function parseSince(spec, now = Date.now()) {
 /** Sessions with no run after the cutoff are dropped. */
 export function filterSessions(sessions, sinceMs) {
   if (sinceMs == null) return sessions;
+
+  const active = (x) => {
+    const t = x && (x.lastActivityAt || x.startedAt);
+    return !!t && +new Date(t) >= sinceMs;
+  };
+
   return sessions
-    .map((s) => ({
-      ...s,
-      runs: s.runs.filter((r) => {
-        const t = r.lastActivityAt || r.startedAt;
-        return t && +new Date(t) >= sinceMs;
-      }),
-    }))
-    .filter((s) => s.runs.length);
+    .map((s) => ({ ...s, runs: s.runs.filter(active) }))
+    // A session survives if its own conversation was active in the window, not
+    // only if it delegated. Keying on runs alone dropped every session where
+    // the main agent did the work itself — which is most of them — so --since
+    // reported nothing for exactly the projects it was meant to measure.
+    .filter((s) => s.runs.length || active(s));
 }
 
 /**
