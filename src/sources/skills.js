@@ -9,8 +9,9 @@
  *
  * Being listed here is a weaker claim than being a source. A source means
  * runlanes can read that runner's transcripts. A target here only means
- * runlanes can teach that agent to use it — Copilot cannot be measured by
- * this tool, but it can certainly be told to run it.
+ * runlanes can teach that agent to use it — Copilot Chat in the IDE cannot
+ * be measured (it does not write a readable transcript) but can still be
+ * told to run it. Copilot CLI is a source.
  */
 import fs from "node:fs";
 import os from "node:os";
@@ -63,7 +64,9 @@ export const SKILL_TARGETS = [
     label: "GitHub Copilot",
     file: path.join(".github", "instructions", "runlanes.instructions.md"),
     detect: (cwd) =>
-      fs.existsSync(path.join(cwd, ".github")) || fs.existsSync(home(".config", "github-copilot")),
+      fs.existsSync(path.join(cwd, ".github")) ||
+      fs.existsSync(home(".config", "github-copilot")) ||
+      fs.existsSync(home(".copilot")),
     wrap: (body, m) => yaml({ description: m.description, applyTo: '"**"' }) + body,
   },
   {

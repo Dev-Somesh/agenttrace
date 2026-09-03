@@ -1,0 +1,26 @@
+{
+  "executionId": "exec-1",
+  "workflowType": "chat-agent",
+  "status": "succeed",
+  "startTime": 1742176800000,
+  "endTime": 1742176860000,
+  "chatSessionId": "sess-kiro-1",
+  "actions": [
+    {
+      "actionType": "readFiles",
+      "actionState": "Accepted",
+      "input": { "files": [{ "path": "src/app.ts" }] }
+    },
+    {
+      "actionType": "write",
+      "actionState": "Accepted",
+      "input": { "file": "src/gone.ts" }
+    },
+    {
+      "actionType": "runCommand",
+      "actionState": "Accepted",
+      "input": { "command": "cat package.json && cat package.js" }
+    },
+    { "actionType": "say", "actionState": "Success" }
+  ]
+}

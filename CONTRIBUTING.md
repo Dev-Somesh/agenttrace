@@ -10,7 +10,7 @@ git clone https://github.com/Dev-Somesh/runlanes.git
 cd runlanes
 node src/cli.js                 # console for this repo
 node src/cli.js --dir ~/other   # point it at a project with real sessions
-npm test                        # 78 tests, no install needed
+npm test                        # 95 tests, no install needed
 ```
 
 `npm install` is not required and installs nothing: the `dependencies` object is
@@ -39,6 +39,11 @@ src/
     read.js           jsonl + path hygiene (existence checks on scrapes only)
     claude-code.js    sessions + documents
     cursor.js         sessions + documents (no token usage in transcripts)
+    codex.js          sessions + documents
+    gemini-cli.js     sessions + documents
+    copilot.js        Copilot CLI sessions + documents
+    kiro.js           Kiro IDE sessions + documents (credits, not tokens)
+    skills.js         where --install-skill writes
     index.js          registry
   ui/index.html       single-file UI, no build step
 ```
@@ -53,7 +58,8 @@ vendor. `analyse.js`, `server.js` and the UI work only against the normalised
 A **source** is a runner whose transcripts we can read. A **skill target** is an
 agent we can hand instructions to. They are different claims and different
 files, and conflating them would advertise support that does not exist —
-Copilot cannot be measured by this tool and can still be told to run it.
+Copilot Chat in the IDE cannot be measured by this tool and can still be told
+to run it. Copilot CLI is a source.
 
 Skill targets live in `src/sources/skills.js`, with every other piece of vendor
 knowledge. A target is a path, a `detect()`, and a `wrap()` that adds whatever

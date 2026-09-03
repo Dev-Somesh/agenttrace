@@ -7,9 +7,13 @@
  */
 import { claudeCode } from "./claude-code.js";
 import { cursor } from "./cursor.js";
+import { codex } from "./codex.js";
+import { geminiCli } from "./gemini-cli.js";
+import { copilot } from "./copilot.js";
+import { kiro } from "./kiro.js";
 import { exampleDocuments } from "../examples.js";
 
-export const SOURCES = [claudeCode, cursor];
+export const SOURCES = [claudeCode, cursor, codex, geminiCli, copilot, kiro];
 
 /** Sources actually present on this machine. */
 export function availableSources() {

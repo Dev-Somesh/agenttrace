@@ -1,0 +1,22 @@
+{
+  "sessionId": "sess-kiro-1",
+  "title": "Rewrite src/app.ts",
+  "workspaceDirectory": "__CWD__",
+  "selectedModel": "auto",
+  "sessionType": "vibe",
+  "dateCreated": "1742176800000",
+  "history": [
+    {
+      "message": {
+        "role": "user",
+        "content": [{ "type": "text", "text": "Rewrite src/app.ts" }],
+        "id": "u1"
+      },
+      "executionId": "exec-1"
+    },
+    {
+      "message": { "role": "assistant", "content": "I'll look at it.", "id": "a1" },
+      "executionId": "exec-1"
+    }
+  ]
+}

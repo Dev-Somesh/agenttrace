@@ -35,11 +35,16 @@ export const PRICES = {
   "claude-sonnet-4": { input: 3, output: 15 },
 
   // Other families, for runners that record a model at all.
+  "gpt-5.4": { input: 1.25, output: 10 },
   "gpt-5": { input: 1.25, output: 10 },
   "gpt-4.1": { input: 2, output: 8 },
   "gpt-4o": { input: 2.5, output: 10 },
   "o3": { input: 2, output: 8 },
   "o4-mini": { input: 1.1, output: 4.4 },
+
+  "gemini-2.5-pro": { input: 1.25, output: 10 },
+  "gemini-2.5-flash": { input: 0.3, output: 2.5 },
+  "gemini-2.0-flash": { input: 0.1, output: 0.4 },
 };
 
 /**

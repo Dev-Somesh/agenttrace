@@ -1,0 +1,7 @@
+{"timestamp":"2026-03-17T02:00:00.000Z","type":"session_meta","payload":{"id":"sess-codex-1","cwd":"__CWD__","source":"cli","model_provider":"openai"}}
+{"timestamp":"2026-03-17T02:00:01.000Z","type":"event_msg","payload":{"type":"user_message","message":"Rewrite src/app.ts to export a helper"}}
+{"timestamp":"2026-03-17T02:00:02.000Z","type":"turn_context","payload":{"model":"gpt-5.4","collaboration_mode":{"settings":{"model":"gpt-5.4","reasoning_effort":"medium"}}}}
+{"timestamp":"2026-03-17T02:00:03.000Z","type":"response_item","payload":{"type":"function_call","name":"shell_command","arguments":"{\"command\":\"cat src/app.ts && cat package.json && cat package.js\"}"}}
+{"timestamp":"2026-03-17T02:00:04.000Z","type":"response_item","payload":{"type":"custom_tool_call","name":"apply_patch","input":"*** Begin Patch\n*** Add File: src/gone.ts\n+export {}\n*** End Patch"}}
+{"timestamp":"2026-03-17T02:00:05.000Z","type":"event_msg","payload":{"type":"token_count","info":{"total_token_usage":{"input_tokens":1200,"cached_input_tokens":1000,"output_tokens":80,"reasoning_output_tokens":20,"total_tokens":1280}}}}
+{"timestamp":"2026-03-17T02:00:06.000Z","type":"response_item","payload":{"type":"message","role":"assistant","content":[{"type":"output_text","text":"done"}]}}

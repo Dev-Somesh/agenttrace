@@ -124,15 +124,15 @@ cannot measure.
 |---|---|---|
 | **Claude Code** | Yes | Yes |
 | **Cursor** | Yes — but its transcripts record no token usage, so those figures read `—` | Yes |
-| **Codex** | Not yet | Yes |
-| **Gemini CLI** | Not yet | Yes |
-| **GitHub Copilot** | Not yet | Yes |
-| **Kiro** | Not yet | Yes |
+| **Codex** | Yes | Yes |
+| **Gemini CLI** | Yes | Yes |
+| **GitHub Copilot CLI** | Yes | Yes |
+| **Kiro** | Yes — but usage is billed in credits, not tokens, so those figures read `—` | Yes |
 | Anything else | [Add a runner](#adding-a-runner) — the adapter interface is public | `--skill` prints the instructions to paste anywhere |
 
-"Not yet" means exactly that: nobody has written the adapter. The transcripts
-are on disk in each case, and a source is one file — see
-[adding a runner](#adding-a-runner).
+GitHub Copilot Chat in the IDE is teachable (`--install-skill` writes
+`.github/instructions/`) and is **not** measured: those chats are not stored as
+a local transcript this tool can read. Copilot CLI is.
 
 `--sources` lists what it can measure on your machine.
 [`--install-skill`](#for-coding-agents) covers what it can teach.
