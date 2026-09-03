@@ -1,7 +1,7 @@
 # Sample skill — read before you rewrite
 
 A skill is a short instruction a runner loads for a job it will do more than
-once. agenttrace shows the copy so you can see what it was told, not what it
+once. runlanes shows the copy so you can see what it was told, not what it
 claims it did.
 
 ## When to use this

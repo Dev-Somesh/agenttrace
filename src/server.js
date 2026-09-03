@@ -325,7 +325,7 @@ export function createApp({ cwd, docs = null, since = null, port = 4180, lan = f
               if (bound.lan && body.tunnel !== false && !tunnelHandle) ensureTunnel();
             })
             .catch((err) => {
-              console.error(`agenttrace: could not rebind: ${err.message}`);
+              console.error(`runlanes: could not rebind: ${err.message}`);
             });
         }, 250);
       });
@@ -343,7 +343,7 @@ export function createApp({ cwd, docs = null, since = null, port = 4180, lan = f
         const html = snapshotHtml(fs.readFileSync(UI, "utf8"), buildState(cwd, { docs, since, access: access() }));
         res.writeHead(200, {
           "Content-Type": "text/html; charset=utf-8",
-          "Content-Disposition": 'attachment; filename="agenttrace.html"',
+          "Content-Disposition": 'attachment; filename="runlanes.html"',
           "Cache-Control": "no-store",
           "X-Content-Type-Options": "nosniff",
         });
@@ -358,7 +358,7 @@ export function createApp({ cwd, docs = null, since = null, port = 4180, lan = f
         const html = fs.readFileSync(UI, "utf8").replace("__UI_VERSION__", uiVersion());
         return send(res, 200, html, "text/html; charset=utf-8");
       } catch {
-        return send(res, 500, "UI missing. Reinstall agenttrace.", "text/plain");
+        return send(res, 500, "UI missing. Reinstall runlanes.", "text/plain");
       }
     }
 

@@ -8,7 +8,7 @@
  * Cursor transcripts do not record token usage. Tokens stay 0 rather than
  * being guessed — a measured zero, not a missing measurement dressed as one.
  *
- * Everything vendor-specific lives here. The rest of agenttrace only sees
+ * Everything vendor-specific lives here. The rest of runlanes only sees
  * the normalised types.
  */
 import fs from "node:fs";

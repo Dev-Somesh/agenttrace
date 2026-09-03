@@ -3,7 +3,7 @@
 **Docs** lists markdown your agent runner keeps *beside this project* — not
 every file on the machine, and not a plan written for some other repo.
 
-Each collection below is a sample of a kind agenttrace will surface when it
+Each collection below is a sample of a kind runlanes will surface when it
 finds one in the project. They are shipped with the package so the tab has
 something to show on a first run. Your own files replace them the moment a
 source finds any.

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>agenttrace</title>
+<title>runlanes</title>
 <style>
 :root{
   --bg:#080B0F; --panel:#0D1218; --panel-2:#111823; --grid:#151E29;
@@ -182,10 +182,10 @@ footer{padding:34px 0 0;font-size:.62rem;color:var(--faint);line-height:1.9}
 <div class="wrap">
 <header>
   <div class="bar" id="bar">
-    <h1>agenttrace</h1>
+    <h1>runlanes</h1>
     <span class="proj" id="proj"></span>
     <span class="sub" id="src">local</span>
-    <a class="ex" id="export" href="/api/export" download="agenttrace.html">Export</a>
+    <a class="ex" id="export" href="/api/export" download="runlanes.html">Export</a>
     <span class="live"><span class="bw"><i></i><span class="beacon" id="beacon"></span></span>
       <span id="status">connecting…</span></span>
   </div>
@@ -437,7 +437,7 @@ function renderAccess(d){
   document.getElementById("proj").textContent=project;
   if(asking||sig===accessSig)return;
   accessSig=sig;
-  if(project)document.title=project+" · agenttrace";
+  if(project)document.title=project+" · runlanes";
   if(!urls.length&&frozen){box.hidden=true;return}
   box.hidden=false;
   const chips=(d.across||[]).map(x=>
@@ -671,7 +671,7 @@ async function tick(){
       if(!res.ok)throw new Error("HTTP "+res.status);
       d=await res.json();
     }catch(e){
-      fails++;setStatus(`unreachable (${fails}) — is agenttrace still running?`,"error");return;
+      fails++;setStatus(`unreachable (${fails}) — is runlanes still running?`,"error");return;
     }
   }
   fails=0;last=d;
@@ -680,11 +680,11 @@ async function tick(){
   // not fix a server running code from before a change.
   if(d.serverStale&&!document.getElementById("stale-server")){
     bar.insertAdjacentHTML("afterend",
-      `<div id="stale-server" class="note" style="border-left-color:var(--alert)"><b>This server is running old code.</b> agenttrace changed on disk after it started, so what you are seeing may be wrong. Restart it — reloading this page will not help.</div>`);
+      `<div id="stale-server" class="note" style="border-left-color:var(--alert)"><b>This server is running old code.</b> runlanes changed on disk after it started, so what you are seeing may be wrong. Restart it — reloading this page will not help.</div>`);
   }
   if(d.uiVersion&&LOADED_UI!=="__UI_"+"VERSION__"&&d.uiVersion!==LOADED_UI&&!document.getElementById("stale")){
     bar.insertAdjacentHTML("afterend",
-      `<div id="stale" class="note"><b>This page is out of date.</b> agenttrace has been updated since you opened it — reload.</div>`);
+      `<div id="stale" class="note"><b>This page is out of date.</b> runlanes has been updated since you opened it — reload.</div>`);
   }
 
   const fp=JSON.stringify([d.lifetime,(d.now||[]).map(s=>[s.id,s.sourceId,(s.runs||[]).map(r=>[r.id,r.tokens,r.status,r.model])]),d.access&&[d.access.lan,d.access.tunnel&&d.access.tunnel.url]]);

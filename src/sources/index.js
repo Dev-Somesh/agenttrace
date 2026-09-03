@@ -2,7 +2,7 @@
  * Source registry.
  *
  * To add a runner: write one file in this directory implementing the Source
- * interface in types.js, then add it here. Nothing else in agenttrace needs to
+ * interface in types.js, then add it here. Nothing else in runlanes needs to
  * change, and nothing outside this directory may reference a vendor.
  */
 import { claudeCode } from "./claude-code.js";

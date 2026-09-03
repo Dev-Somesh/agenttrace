@@ -1,6 +1,6 @@
 # Sample command — /budget
 
-A command is a reusable prompt you invoke by name. agenttrace shows the text
+A command is a reusable prompt you invoke by name. runlanes shows the text
 so a `/budget` in the history is not an opaque token.
 
 ```

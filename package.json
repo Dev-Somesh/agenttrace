@@ -1,10 +1,10 @@
 {
-  "name": "@dev-somesh/agenttrace",
+  "name": "runlanes",
   "version": "0.1.0",
   "description": "See what your coding agents actually did — cost, concurrency, and which files each run touched. Reads local transcripts, sends nothing anywhere.",
   "type": "module",
   "bin": {
-    "agenttrace": "src/cli.js"
+    "runlanes": "src/cli.js"
   },
   "main": "src/server.js",
   "exports": {
@@ -42,10 +42,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Dev-Somesh/agenttrace.git"
+    "url": "git+https://github.com/Dev-Somesh/runlanes.git"
   },
   "bugs": {
-    "url": "https://github.com/Dev-Somesh/agenttrace/issues"
+    "url": "https://github.com/Dev-Somesh/runlanes/issues"
   },
-  "homepage": "https://github.com/Dev-Somesh/agenttrace#readme"
+  "homepage": "https://github.com/Dev-Somesh/runlanes#readme"
 }

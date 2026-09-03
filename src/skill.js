@@ -1,7 +1,7 @@
 /**
  * A skill file teaching an agent to run and read this tool.
  *
- * People ask their agent to "set up agenttrace" and the agent guesses. Left to
+ * People ask their agent to "set up runlanes" and the agent guesses. Left to
  * guess it starts the server in the foreground and blocks until it times out,
  * or reads an unmeasured `—` as zero cost and reports the run as free. The
  * instructions below are the same ones in the README, written once here.
@@ -13,15 +13,15 @@
 import fs from "node:fs";
 import path from "node:path";
 
-export const SKILL_NAME = "agenttrace";
+export const SKILL_NAME = "runlanes";
 
 export const SKILL_DESCRIPTION =
-  "Run the agenttrace console for this project and read its figures correctly. " +
-  "Use when asked to set up agenttrace, show agent cost, check how much a run " +
+  "Run the runlanes console for this project and read its figures correctly. " +
+  "Use when asked to set up runlanes, show agent cost, check how much a run " +
   "spent, see whether agents ran in parallel, or find which files two runs both touched.";
 
 /** The instructions themselves, free of any runner-specific framing. */
-export const SKILL_BODY = `# agenttrace
+export const SKILL_BODY = `# runlanes
 
 A local, read-only console over the transcripts your coding agents already
 wrote to disk. No API key, no account, no configuration. It reads files; it
@@ -34,7 +34,7 @@ Always use \`--detach\`, which spawns it, prints the URL and pid, and returns:
 
 \`\`\`bash
 cd <the user's project>
-npx -y @dev-somesh/agenttrace --detach
+npx -y runlanes --detach
 \`\`\`
 
 Then confirm it is serving before telling the user it is ready:
@@ -70,7 +70,7 @@ These are the mistakes an agent makes when reporting what it sees.
 \`--json\` prints everything and exits:
 
 \`\`\`bash
-npx -y @dev-somesh/agenttrace --json --since 24h
+npx -y runlanes --json --since 24h
 \`\`\`
 
 Useful fields: \`lifetime.totalTokens\`, \`lifetime.totalCostUsd\`,
@@ -88,11 +88,11 @@ fabricate data or point it at a different directory without asking.
 - Never pass \`--lan\` or \`--tunnel\` unless the user explicitly asks. They
   expose the console beyond the machine, and transcripts contain prompts, file
   paths, and sometimes secrets typed into a shell.
-- Never commit anything you create. If you add an \`agenttrace.json\` for
+- Never commit anything you create. If you add a \`runlanes.json\` for
   prices, tell the user it exists.
 - Do not paste console contents into a public issue or PR without asking.
 - A port already in use fails with \`EADDRINUSE\` and does not fall back. Retry
-  on another port, or check whether agenttrace is already running.
+  on another port, or check whether runlanes is already running.
 `;
 
 /**

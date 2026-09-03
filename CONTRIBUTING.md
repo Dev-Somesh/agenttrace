@@ -1,4 +1,4 @@
-# Contributing to agenttrace
+# Contributing to runlanes
 
 The repository is the program. There is no build step, no bundler, and no
 dependencies — `src/cli.js` is what runs.
@@ -6,11 +6,11 @@ dependencies — `src/cli.js` is what runs.
 ## Working on it
 
 ```bash
-git clone https://github.com/Dev-Somesh/agenttrace.git
-cd agenttrace
+git clone https://github.com/Dev-Somesh/runlanes.git
+cd runlanes
 node src/cli.js                 # console for this repo
 node src/cli.js --dir ~/other   # point it at a project with real sessions
-npm test                        # 73 tests, no install needed
+npm test                        # 78 tests, no install needed
 ```
 
 `npm install` is not required and installs nothing: the `dependencies` object is
@@ -63,7 +63,7 @@ frontmatter that tool expects:
 {
   id: "some-agent",
   label: "Some Agent",
-  file: path.join(".someagent", "rules", "agenttrace.md"),
+  file: path.join(".someagent", "rules", "runlanes.md"),
   detect: (cwd) => fs.existsSync(home(".someagent")),
   wrap: (body, m) => yaml({ description: m.description }) + body,
 }
@@ -105,7 +105,7 @@ does not. There is a test holding this.
 resolve on GitHub and are excluded from the published tarball by the `files`
 array, so the package stays ~43 kB. npmjs.com does not resolve relative image
 paths: before publishing, swap them for absolute
-`raw.githubusercontent.com/Dev-Somesh/agenttrace/main/...` URLs, which work in
+`raw.githubusercontent.com/Dev-Somesh/runlanes/main/...` URLs, which work in
 both places — but only once the repo is public, since raw URLs on a private
 repo need a token and would render broken.
 
@@ -113,11 +113,11 @@ The screenshots are of real transcripts from a real project. They show file
 paths and truncated prompts. Regenerating them against a fixture project is the
 way to remove that if these ever go somewhere more public than the repo.
 
-**Reader-supplied prices live in `agenttrace.json`, not in `src/prices.js`.**
+**Reader-supplied prices live in `runlanes.json`, not in `src/prices.js`.**
 The README used to say to edit `src/prices.js`. Under `npx` that file sits in a
 node_modules cache, so the single documented modification of this tool was
 discarded on the next run — and quietly, leaving every dollar figure wrong. A
-`prices` block in the project's own `agenttrace.json` is merged over the
+`prices` block in the project's own `runlanes.json` is merged over the
 shipped table at load. A config that cannot be parsed is pushed to `problems`
 and shown, never swallowed: wrong money with a console reporting itself healthy
 is the failure mode this whole tool exists to catch.

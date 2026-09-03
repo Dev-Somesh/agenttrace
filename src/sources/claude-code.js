@@ -5,7 +5,7 @@
  * is a .jsonl file alongside a directory of the subagents it spawned.
  *
  * Everything vendor-specific lives here: the paths, the record shape, the
- * sidecar files. The rest of agenttrace only sees the normalised types.
+ * sidecar files. The rest of runlanes only sees the normalised types.
  */
 import fs from "node:fs";
 import os from "node:os";

@@ -20,7 +20,7 @@ test("shipped samples cover every kind the Docs tab is for", () => {
 });
 
 test("a project with no sidecar markdown gets the samples, not another repo's plans", () => {
-  const docs = collectDocuments("/tmp/agenttrace-no-such-project");
+  const docs = collectDocuments("/tmp/runlanes-no-such-project");
   assert.ok(docs.some((c) => c.id === "example-about"));
   assert.ok(!docs.some((c) => c.scope === "user"));
 });

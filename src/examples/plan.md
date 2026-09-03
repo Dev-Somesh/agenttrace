@@ -1,6 +1,6 @@
 # Sample plan — ship a measured console
 
-A plan is a written approach, not a transcript. agenttrace renders it so you
+A plan is a written approach, not a transcript. runlanes renders it so you
 can read what was decided without opening the runner's folder.
 
 ## Goal

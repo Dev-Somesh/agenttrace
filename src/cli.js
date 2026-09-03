@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * agenttrace — see what your coding agents actually did.
+ * runlanes — see what your coding agents actually did.
  *
  * Reads agent transcripts already on disk and serves a local page showing what
  * each run cost, when it ran, and which files it touched. Nothing is uploaded
@@ -30,26 +30,26 @@ const has = (name) => argv.includes(`--${name}`);
 
 if (has("help") || has("h")) {
   console.log(`
-  agenttrace — see what your coding agents actually did
+  runlanes — see what your coding agents actually did
 
-    npx agenttrace                 serve the console for this directory
-    npx agenttrace --port 5000     use a different port
-    npx agenttrace --dir <path>    inspect another project
-    npx agenttrace --json          print the data and exit
-    npx agenttrace --sources       list detected agent runners
-    npx agenttrace --docs plans    show only these document collections
+    npx runlanes                 serve the console for this directory
+    npx runlanes --port 5000     use a different port
+    npx runlanes --dir <path>    inspect another project
+    npx runlanes --json          print the data and exit
+    npx runlanes --sources       list detected agent runners
+    npx runlanes --docs plans    show only these document collections
                                    (default: everything found)
-    npx agenttrace --since 24h     only runs active in this window
+    npx runlanes --since 24h     only runs active in this window
                                    (1h, 7d, or an ISO date)
-    npx agenttrace --export out.html
+    npx runlanes --export out.html
                                    write a self-contained snapshot and exit
-    npx agenttrace --lan           bind all interfaces (phone on the same Wi-Fi)
-    npx agenttrace --tunnel        also start ngrok / cloudflared if installed
-    npx agenttrace --detach        keep serving after this terminal closes
-    npx agenttrace --install-skill teach your coding agents to use this
+    npx runlanes --lan           bind all interfaces (phone on the same Wi-Fi)
+    npx runlanes --tunnel        also start ngrok / cloudflared if installed
+    npx runlanes --detach        keep serving after this terminal closes
+    npx runlanes --install-skill teach your coding agents to use this
                                    (--install-skill all covers every agent,
                                     not just the ones on this machine)
-    npx agenttrace --skill         print those instructions to stdout
+    npx runlanes --skill         print those instructions to stdout
 
   Default bind is 127.0.0.1. --lan, --tunnel and Forward port are opt-in:
   transcripts can contain secrets, and anyone who can open a live URL can read them.
@@ -83,7 +83,7 @@ if (has("detach") || has("background")) {
   child.unref();
   const info = accessInfo({ cwd, port, lan });
   if (wantTunnel) console.log(`  public URL will appear on the page once the tunnel starts`);
-  console.log(`agenttrace running in background (pid ${child.pid})`);
+  console.log(`runlanes running in background (pid ${child.pid})`);
   printAccess(info);
   console.log(`  Stop from the page or: kill ${child.pid}\n`);
   process.exit(0);
@@ -119,7 +119,7 @@ if (has("install-skill")) {
     process.exit(1);
   }
   const results = installSkill(cwd, targets);
-  console.log(`\n  Taught ${results.length} agent${results.length === 1 ? "" : "s"} to use agenttrace\n`);
+  console.log(`\n  Taught ${results.length} agent${results.length === 1 ? "" : "s"} to use runlanes\n`);
   for (const r of results) {
     const mark = r.status === "kept" ? "already there" : r.status;
     console.log(`  ${r.label.padEnd(16)} ${r.file}  (${mark})`);
@@ -129,7 +129,7 @@ if (has("install-skill")) {
     console.log("");
     for (const t of notes) console.log(`  ${t.label}: ${t.note}`);
   }
-  console.log(`\n  Ask your agent: "set up agenttrace and open the dashboard"\n`);
+  console.log(`\n  Ask your agent: "set up runlanes and open the dashboard"\n`);
   process.exit(0);
 }
 
@@ -139,7 +139,7 @@ if (has("json")) {
 }
 
 if (has("export")) {
-  const dest = flag("export", "agenttrace.html");
+  const dest = flag("export", "runlanes.html");
   const ui = path.join(path.dirname(here), "ui", "index.html");
   const html = snapshotHtml(fs.readFileSync(ui, "utf8"), buildState(cwd, { docs, since }));
   fs.writeFileSync(dest, html);
@@ -180,7 +180,7 @@ app.start().then(async (info) => {
     if (!url && info.tunnel?.error) console.error(`  tunnel: ${info.tunnel.error}`);
   }
   const { runs, sessions, totalTokens, mainTokens, tokens, totalCostUsd } = state.lifetime;
-  console.log(`\n  agenttrace\n`);
+  console.log(`\n  runlanes\n`);
   printAccess(info);
 
   // totalTokens, not tokens: `tokens` counts only what was delegated, so a
@@ -215,9 +215,9 @@ app.start().then(async (info) => {
   const dash = info.urls.find((u) => u.live)?.url || `http://127.0.0.1:${info.port || port}`;
   console.log(`\n  Console ready → ${dash}`);
   if (!skillsInstalled(cwd)) {
-    console.log(`  Teach your coding agents to use it: npx agenttrace --install-skill`);
+    console.log(`  Teach your coding agents to use it: npx runlanes --install-skill`);
   }
-  console.log(`  Useful? A star helps people find it: https://github.com/Dev-Somesh/agenttrace\n`);
+  console.log(`  Useful? A star helps people find it: https://github.com/Dev-Somesh/runlanes\n`);
 }).catch((err) => {
   console.error(err.message || err);
   process.exit(1);

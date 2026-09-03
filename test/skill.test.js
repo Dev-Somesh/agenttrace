@@ -17,7 +17,7 @@ test("every target writes a file the agent will actually read", () => {
     const written = path.join(dir, r.file);
     assert.ok(fs.existsSync(written), `${r.label} wrote ${r.file}`);
     const text = fs.readFileSync(written, "utf8");
-    assert.ok(text.includes("agenttrace"), `${r.label} carries the instructions`);
+    assert.ok(text.includes("runlanes"), `${r.label} carries the instructions`);
     assert.equal(r.status, "written");
   }
   fs.rmSync(dir, { recursive: true, force: true });

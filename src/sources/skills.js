@@ -8,8 +8,8 @@
  * reference a specific tool.
  *
  * Being listed here is a weaker claim than being a source. A source means
- * agenttrace can read that runner's transcripts. A target here only means
- * agenttrace can teach that agent to use it — Copilot cannot be measured by
+ * runlanes can read that runner's transcripts. A target here only means
+ * runlanes can teach that agent to use it — Copilot cannot be measured by
  * this tool, but it can certainly be told to run it.
  */
 import fs from "node:fs";
@@ -28,14 +28,14 @@ export const SKILL_TARGETS = [
   {
     id: "claude-code",
     label: "Claude Code",
-    file: path.join(".claude", "skills", "agenttrace", "SKILL.md"),
+    file: path.join(".claude", "skills", "runlanes", "SKILL.md"),
     detect: () => fs.existsSync(home(".claude")),
     wrap: (body, m) => yaml({ name: m.name, description: m.description }) + body,
   },
   {
     id: "cursor",
     label: "Cursor",
-    file: path.join(".cursor", "rules", "agenttrace.mdc"),
+    file: path.join(".cursor", "rules", "runlanes.mdc"),
     detect: () => fs.existsSync(home(".cursor")),
     wrap: (body, m) => yaml({ description: m.description, alwaysApply: false }) + body,
   },
@@ -45,23 +45,23 @@ export const SKILL_TARGETS = [
     // Codex reads AGENTS.md from the repository root. Everything else here
     // gets its own file; this one would collide with a file the project may
     // already keep, so it is written beside it and linked rather than over it.
-    file: path.join(".agents", "agenttrace.md"),
+    file: path.join(".agents", "runlanes.md"),
     detect: () => fs.existsSync(home(".codex")),
     wrap: (body) => body,
-    note: "AGENTS.md is read automatically; add: See .agents/agenttrace.md for the agenttrace console.",
+    note: "AGENTS.md is read automatically; add: See .agents/runlanes.md for the runlanes console.",
   },
   {
     id: "gemini-cli",
     label: "Gemini CLI",
-    file: path.join(".gemini", "agenttrace.md"),
+    file: path.join(".gemini", "runlanes.md"),
     detect: () => fs.existsSync(home(".gemini")),
     wrap: (body) => body,
-    note: "GEMINI.md is read automatically; add: See .gemini/agenttrace.md for the agenttrace console.",
+    note: "GEMINI.md is read automatically; add: See .gemini/runlanes.md for the runlanes console.",
   },
   {
     id: "copilot",
     label: "GitHub Copilot",
-    file: path.join(".github", "instructions", "agenttrace.instructions.md"),
+    file: path.join(".github", "instructions", "runlanes.instructions.md"),
     detect: (cwd) =>
       fs.existsSync(path.join(cwd, ".github")) || fs.existsSync(home(".config", "github-copilot")),
     wrap: (body, m) => yaml({ description: m.description, applyTo: '"**"' }) + body,
@@ -69,7 +69,7 @@ export const SKILL_TARGETS = [
   {
     id: "kiro",
     label: "Kiro",
-    file: path.join(".kiro", "steering", "agenttrace.md"),
+    file: path.join(".kiro", "steering", "runlanes.md"),
     detect: () => fs.existsSync(home(".kiro")),
     wrap: (body, m) => yaml({ inclusion: "manual", description: m.description }) + body,
   },

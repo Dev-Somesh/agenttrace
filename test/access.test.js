@@ -10,7 +10,7 @@ const nics = {
 };
 
 test("projectName is the directory basename", () => {
-  assert.equal(projectName("/Users/me/work/agenttrace"), "agenttrace");
+  assert.equal(projectName("/Users/me/work/runlanes"), "runlanes");
 });
 
 test("classifyIface names what a person would use the address for", () => {
@@ -22,8 +22,8 @@ test("classifyIface names what a person would use the address for", () => {
 });
 
 test("accessInfo lists every URL and what it is related to", () => {
-  const off = accessInfo({ cwd: "/tmp/agenttrace", port: 4180, lan: false, nics });
-  assert.equal(off.project, "agenttrace");
+  const off = accessInfo({ cwd: "/tmp/runlanes", port: 4180, lan: false, nics });
+  assert.equal(off.project, "runlanes");
   assert.deepEqual(
     off.urls.map((u) => [u.related, u.url, u.live]),
     [
@@ -43,7 +43,7 @@ test("when the port is forwarded every listed URL is live", () => {
 
 test("a public tunnel URL is listed first, with what it is related to", () => {
   const info = accessInfo({
-    cwd: "/tmp/agenttrace",
+    cwd: "/tmp/runlanes",
     port: 4180,
     lan: true,
     nics,

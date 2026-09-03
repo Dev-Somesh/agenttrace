@@ -1,6 +1,6 @@
 name: CI
 
-# agenttrace claims Node 18+ and zero dependencies. Both are claims a matrix
+# runlanes claims Node 18+ and zero dependencies. Both are claims a matrix
 # can actually check, which is more than a bundler workflow would do for a
 # project that has no build step.
 on:
@@ -47,7 +47,7 @@ jobs:
         run: |
           DEPS=$(node -p "Object.keys(require('./package.json').dependencies || {}).length")
           echo "runtime dependencies: $DEPS"
-          [ "$DEPS" -eq 0 ] || { echo "::error::agenttrace is meant to have no runtime dependencies"; exit 1; }
+          [ "$DEPS" -eq 0 ] || { echo "::error::runlanes is meant to have no runtime dependencies"; exit 1; }
 
       # Nothing outside src/sources/ may name a vendor. That rule is the whole
       # basis of the adapter layer, and it is easy to break by accident.
@@ -66,7 +66,7 @@ jobs:
         if: ${{ !cancelled() }}
         run: |
           if grep -rnE '\b(fetch|https?\.request|axios|XMLHttpRequest)\s*\(' src --include='*.js'; then
-            echo "::error::network call in server-side code — agenttrace must stay local-only"
+            echo "::error::network call in server-side code — runlanes must stay local-only"
             exit 1
           fi
           echo "No outbound network calls."

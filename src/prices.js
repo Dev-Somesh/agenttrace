@@ -56,7 +56,7 @@ export const CACHE_READ_MULTIPLIER = 0.1;
  * The README tells you to edit `src/prices.js` to match what you pay. Under
  * `npx` that file lives in a node_modules cache, so the edit is thrown away on
  * the next run — the one documented modification of this tool did not survive.
- * A price block in `agenttrace.json` beside the project does survive, and it
+ * A price block in `runlanes.json` beside the project does survive, and it
  * is the reader's own file rather than one inside the package.
  */
 let overrides = {};
@@ -71,7 +71,7 @@ export function setPriceOverrides(table) {
 }
 
 /**
- * Read a `prices` block from `<cwd>/agenttrace.json`, if there is one.
+ * Read a `prices` block from `<cwd>/runlanes.json`, if there is one.
  *
  * Returns any complaint rather than throwing. A malformed config that silently
  * did nothing would leave every figure quietly wrong with the console
@@ -79,7 +79,7 @@ export function setPriceOverrides(table) {
  * so the caller surfaces the message alongside source errors.
  */
 export function loadPriceOverrides(cwd) {
-  const file = path.join(cwd || ".", "agenttrace.json");
+  const file = path.join(cwd || ".", "runlanes.json");
   let raw;
   try {
     raw = fs.readFileSync(file, "utf8");
@@ -91,13 +91,13 @@ export function loadPriceOverrides(cwd) {
   try {
     parsed = JSON.parse(raw);
   } catch (err) {
-    return { applied: 0, problem: `agenttrace.json is not valid JSON: ${err.message}` };
+    return { applied: 0, problem: `runlanes.json is not valid JSON: ${err.message}` };
   }
 
   const table = parsed?.prices;
   if (table == null) return { applied: 0, problem: null };
   if (typeof table !== "object" || Array.isArray(table)) {
-    return { applied: 0, problem: "agenttrace.json: `prices` must be an object of model → rate" };
+    return { applied: 0, problem: "runlanes.json: `prices` must be an object of model → rate" };
   }
 
   const good = {};
@@ -113,7 +113,7 @@ export function loadPriceOverrides(cwd) {
   return {
     applied: Object.keys(good).length,
     problem: bad.length
-      ? `agenttrace.json: ignored ${bad.join(", ")} — each needs numeric input and output`
+      ? `runlanes.json: ignored ${bad.join(", ")} — each needs numeric input and output`
       : null,
   };
 }
@@ -135,7 +135,7 @@ export function priceFor(model) {
 /**
  * USD for a run.
  *
- * `tokens` is what agenttrace reports as consumed: input + output + cache
+ * `tokens` is what runlanes reports as consumed: input + output + cache
  * creation, deliberately excluding cache reads, because cache reads re-report
  * the whole prompt every turn and summing them once put a session at 382% of
  * its token budget.

@@ -1,7 +1,7 @@
 /**
  * Optional public tunnel via a binary already on the machine.
  *
- * agenttrace does not bundle ngrok or talk to its API. It starts a local
+ * runlanes does not bundle ngrok or talk to its API. It starts a local
  * process (`ngrok` or `cloudflared`) and reads the public URL from that
  * process's own output. Off by default.
  */

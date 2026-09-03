@@ -1,8 +1,8 @@
-# agenttrace
+# runlanes
 
-![agenttrace](docs/screenshots/banner.png)
+![runlanes](docs/screenshots/banner.png)
 
-[![CI](https://github.com/Dev-Somesh/agenttrace/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Dev-Somesh/agenttrace/actions/workflows/ci.yml)
+[![CI](https://github.com/Dev-Somesh/runlanes/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Dev-Somesh/runlanes/actions/workflows/ci.yml)
 [![Node](https://img.shields.io/badge/node-%E2%89%A518-3DDC97)](https://nodejs.org)
 [![Dependencies](https://img.shields.io/badge/dependencies-0-3DDC97)](package.json)
 [![Licence](https://img.shields.io/badge/licence-MIT-38BDF8)](LICENSE)
@@ -13,20 +13,20 @@ Run several agents in parallel and you lose sight of them. Which one burned the
 tokens? Did they genuinely run concurrently, or just start together? Did two of
 them quietly edit the same file?
 
-`agenttrace` answers that from the transcripts your agent runner already writes
+`runlanes` answers that from the transcripts your agent runner already writes
 to disk. No instrumentation, no wrapper, no account.
 
 ```bash
-npx @dev-somesh/agenttrace
+npx runlanes
 ```
 
 Opens a console at `http://127.0.0.1:4180` for the project you ran it in.
 
 > [!NOTE]
-> Published as **`@dev-somesh/agenttrace`**. Unrelated projects publish under
-> `@agenttrace/*` and `agent-trace`; both sit in the request path and need the
-> run started through them. This one reads transcripts the runner already
-> wrote, so it works on runs that have already finished.
+> This is **runlanes**. Other tools publish as AgentTrace (`@agenttrace/*`,
+> `agent-trace`, `agenttrace-cli`, …). Those wrap or instrument a run. This one
+> reads transcripts the runner already wrote, so it works on runs that have
+> already finished.
 
 **[What you get](#what-you-get)** · **[Install](#install)** ·
 **[Supported agents](#supported-agents)** · **[Usage](#usage)** ·
@@ -81,27 +81,11 @@ can see what it is for.
 
 ![Docs tab](docs/screenshots/console-docs.png)
 
-<details>
-<summary><b>What it looks like with almost nothing to show</b></summary>
-
-<br>
-
-Pointed at a repository with a single run and no subagents, the console says so
-rather than inventing activity. A runner that records no token usage reads `—`,
-not `0` — unmeasured, not free.
-
-![A project with a single run](docs/screenshots/quiet-now.png)
-
-A graph with nothing shared, a history of one session, and a Docs tab falling
-back to shipped samples. Each says what it found rather than rendering blank.
-
-![Graph, nothing shared](docs/screenshots/quiet-graph.png)
-
-![History, one session](docs/screenshots/quiet-history.png)
-
-![Docs, falling back to samples](docs/screenshots/quiet-docs.png)
-
-</details>
+**On a project with little to show**, the console says so rather than inventing
+activity. A graph with nothing shared, a history of one session, and a Docs tab
+falling back to shipped samples each state what they found instead of rendering
+blank. A runner that records no token usage reads `—`, not `0` — unmeasured,
+not free.
 
 ---
 
@@ -111,21 +95,21 @@ back to shipped samples. Each says what it found rather than rendering blank.
 to install.
 
 You also need a supported runner that has **already written transcripts** for
-the project you point at — agenttrace reads what is on disk, it does not create
+the project you point at — runlanes reads what is on disk, it does not create
 it. A fresh machine has nothing to show.
 
 ```bash
 # run it without installing
 cd your-project
-npx @dev-somesh/agenttrace
+npx runlanes
 
 # or install it
-npm install -g @dev-somesh/agenttrace
-agenttrace
+npm install -g runlanes
+runlanes
 
 # or run it from a clone — no npm install, the repository is the program
-git clone https://github.com/Dev-Somesh/agenttrace.git
-cd agenttrace
+git clone https://github.com/Dev-Somesh/runlanes.git
+cd runlanes
 node src/cli.js --dir /path/to/your-project
 ```
 
@@ -177,17 +161,17 @@ are on disk in each case, and a source is one file — see
 on it in CI:
 
 ```bash
-npx @dev-somesh/agenttrace --json --since 24h | jq '.lifetime.totalCostUsd'
+npx runlanes --json --since 24h | jq '.lifetime.totalCostUsd'
 ```
 
 ---
 
 ## Configuration
 
-Everything is optional. agenttrace runs with no config at all.
+Everything is optional. runlanes runs with no config at all.
 
 **Prices.** Dollar figures come from a local table, never a live feed. Put the
-rates you actually pay in an `agenttrace.json` beside your project:
+rates you actually pay in a `runlanes.json` beside your project:
 
 ```json
 {
@@ -247,7 +231,7 @@ excluded is shown beside the total.
 
 ## Privacy
 
-Everything is read from local files and rendered locally. **agenttrace makes no
+Everything is read from local files and rendered locally. **runlanes makes no
 network requests and transmits nothing.** There is no telemetry and no account.
 
 > [!WARNING]
@@ -258,7 +242,7 @@ The default bind is **localhost**. Forwarding the port — the button on the pag
 `--lan`, or `--tunnel` — is opt-in and lists every address with what it is for:
 this machine, Wi-Fi, VPN, and, if `ngrok` or `cloudflared` is already on your
 PATH, a public internet URL. Anyone who can open a live URL can read the
-transcripts, and can stop sharing from the same page. agenttrace does not bundle
+transcripts, and can stop sharing from the same page. runlanes does not bundle
 a tunnel client and does not start one unless you ask.
 
 ---
@@ -270,34 +254,34 @@ a tunnel client and does not start one unless you ask.
 Teach the agents on your machine to run and read this correctly, once:
 
 ```bash
-npx @dev-somesh/agenttrace --install-skill        # agents detected here
-npx @dev-somesh/agenttrace --install-skill all    # every supported agent
-npx @dev-somesh/agenttrace --skill                # print it, paste it anywhere
+npx runlanes --install-skill        # agents detected here
+npx runlanes --install-skill all    # every supported agent
+npx runlanes --skill                # print it, paste it anywhere
 ```
 
 It writes a short instruction file wherever each agent already looks:
 
 | Agent | File |
 |---|---|
-| Claude Code | `.claude/skills/agenttrace/SKILL.md` |
-| Cursor | `.cursor/rules/agenttrace.mdc` |
-| Codex | `.agents/agenttrace.md` (referenced from `AGENTS.md`) |
-| Gemini CLI | `.gemini/agenttrace.md` (referenced from `GEMINI.md`) |
-| GitHub Copilot | `.github/instructions/agenttrace.instructions.md` |
-| Kiro | `.kiro/steering/agenttrace.md` |
+| Claude Code | `.claude/skills/runlanes/SKILL.md` |
+| Cursor | `.cursor/rules/runlanes.mdc` |
+| Codex | `.agents/runlanes.md` (referenced from `AGENTS.md`) |
+| Gemini CLI | `.gemini/runlanes.md` (referenced from `GEMINI.md`) |
+| GitHub Copilot | `.github/instructions/runlanes.instructions.md` |
+| Kiro | `.kiro/steering/runlanes.md` |
 
 An existing file is never overwritten. Teachable is a weaker claim than
 measured — see [supported agents](#supported-agents).
 
 Then just ask:
 
-> Set up agenttrace for this project and open the dashboard.
+> Set up runlanes for this project and open the dashboard.
 
 ### Or paste this without installing anything
 
-> Set up agenttrace for this project and open the dashboard. Follow the
+> Set up runlanes for this project and open the dashboard. Follow the
 > "For coding agents" section of
-> https://github.com/Dev-Somesh/agenttrace
+> https://github.com/Dev-Somesh/runlanes
 
 <details>
 <summary><b>Instructions for the agent</b> — written to be followed literally</summary>
@@ -316,11 +300,11 @@ the URL and pid, and returns immediately:
 
 ```bash
 cd /path/to/the/users/project
-npx -y @dev-somesh/agenttrace --detach
+npx -y runlanes --detach
 ```
 
 ```
-agenttrace running in background (pid 13988)
+runlanes running in background (pid 13988)
   project   your-project
   this machine only      http://127.0.0.1:4180
   Stop from the page or: kill 13988
@@ -352,7 +336,7 @@ generate data.
 
 | What you see | What it means | What to do |
 |---|---|---|
-| `listen EADDRINUSE: ... 127.0.0.1:4180` | Something already holds the port. There is no automatic fallback. | Retry with `--port 4181`, or check whether agenttrace is already running and just open it |
+| `listen EADDRINUSE: ... 127.0.0.1:4180` | Something already holds the port. There is no automatic fallback. | Retry with `--port 4181`, or check whether runlanes is already running and just open it |
 | Dashboard loads, every panel empty | No transcripts for this directory | Run `--sources`. Confirm the user has run a supported agent **in this project** |
 | Tokens show `—` | That runner records no usage | Correct behaviour, not a bug. `—` means unmeasured; `0` would mean free |
 | Red "running old code" banner | The server started before the files changed | Restart the process. Reloading the page will not help |
@@ -361,7 +345,7 @@ generate data.
 
 - **Never pass `--lan` or `--tunnel` unless the user explicitly asks.** They
   expose the console beyond the machine, and transcripts contain secrets.
-- **Never commit anything you create here.** If you add an `agenttrace.json`,
+- **Never commit anything you create here.** If you add a `runlanes.json`,
   tell the user it exists.
 - **Do not paste dashboard contents into a public issue or PR** without asking.
   The `--export` snapshot strips documents for this reason.
@@ -371,7 +355,7 @@ generate data.
 Skip the server — `--json` prints everything and exits:
 
 ```bash
-npx -y @dev-somesh/agenttrace --json --since 24h
+npx -y runlanes --json --since 24h
 ```
 
 </details>
@@ -380,7 +364,7 @@ npx -y @dev-somesh/agenttrace --json --since 24h
 
 ## Adding a runner
 
-`agenttrace` knows nothing about any specific tool. A **source** discovers runs
+`runlanes` knows nothing about any specific tool. A **source** discovers runs
 and normalises them; everything else works only against those shapes. Nothing
 outside `src/sources/` references a vendor, and CI fails the build if that
 changes.

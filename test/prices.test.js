@@ -112,7 +112,7 @@ test("a run with no recorded usage is excluded from totals, not counted as zero"
 // a node_modules cache and the edit is lost on the next run, so the one
 // documented modification of this tool did not survive. A price block beside
 // the project does.
-test("agenttrace.json overrides the shipped rates", async (t) => {
+test("runlanes.json overrides the shipped rates", async (t) => {
   const fs = await import("node:fs");
   const os = await import("node:os");
   const path = await import("node:path");
@@ -127,7 +127,7 @@ test("agenttrace.json overrides the shipped rates", async (t) => {
 
   // A negotiated rate replaces the shipped one; an unlisted model can be added.
   fs.writeFileSync(
-    path.join(dir, "agenttrace.json"),
+    path.join(dir, "runlanes.json"),
     JSON.stringify({ prices: { "claude-opus-5": { input: 2, output: 9 }, "in-house-7": { input: 0, output: 0 } } })
   );
   assert.equal(loadPriceOverrides(dir).applied, 2);
@@ -136,10 +136,10 @@ test("agenttrace.json overrides the shipped rates", async (t) => {
   assert.deepEqual(priceFor("in-house-7"), { input: 0, output: 0 });
 
   // Broken config must be reported, never silently ignored.
-  fs.writeFileSync(path.join(dir, "agenttrace.json"), "{ not json");
+  fs.writeFileSync(path.join(dir, "runlanes.json"), "{ not json");
   assert.match(loadPriceOverrides(dir).problem, /not valid JSON/);
 
-  fs.writeFileSync(path.join(dir, "agenttrace.json"), JSON.stringify({ prices: { "x-1": { input: "free" } } }));
+  fs.writeFileSync(path.join(dir, "runlanes.json"), JSON.stringify({ prices: { "x-1": { input: "free" } } }));
   const bad = loadPriceOverrides(dir);
   assert.equal(bad.applied, 0);
   assert.match(bad.problem, /numeric input and output/);

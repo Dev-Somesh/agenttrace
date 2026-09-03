@@ -1,7 +1,7 @@
 /**
  * The source interface.
  *
- * agenttrace knows nothing about any particular agent runner. A source
+ * runlanes knows nothing about any particular agent runner. A source
  * discovers runs on disk and normalises them into the shapes below; everything
  * else — the server, the timeline, the graph — works only against these.
  *
