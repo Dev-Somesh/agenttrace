@@ -7,6 +7,7 @@
 [![Node](https://img.shields.io/badge/node-%E2%89%A518-3DDC97)](https://nodejs.org)
 [![Dependencies](https://img.shields.io/badge/dependencies-0-3DDC97)](package.json)
 [![Licence](https://img.shields.io/badge/licence-MIT-38BDF8)](LICENSE)
+[![Socket](https://badge.socket.dev/npm/package/runlanes/0.2.1)](https://socket.dev/npm/package/runlanes/overview/0.2.1)
 
 **See what your coding agents actually did.**
 
