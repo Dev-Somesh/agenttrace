@@ -3,10 +3,15 @@
 ![runlanes](https://raw.githubusercontent.com/Dev-Somesh/runlanes/main/docs/screenshots/banner.png)
 
 [![npm](https://img.shields.io/npm/v/runlanes?color=3DDC97)](https://www.npmjs.com/package/runlanes)
+&ensp;
 [![CI](https://github.com/Dev-Somesh/runlanes/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Dev-Somesh/runlanes/actions/workflows/ci.yml)
+&ensp;
 [![Node](https://img.shields.io/badge/node-%E2%89%A518-3DDC97)](https://nodejs.org)
+&ensp;
 [![Dependencies](https://img.shields.io/badge/dependencies-0-3DDC97)](package.json)
+&ensp;
 [![Licence](https://img.shields.io/badge/licence-MIT-38BDF8)](LICENSE)
+&ensp;
 [![Socket](https://badge.socket.dev/npm/package/runlanes/0.2.1)](https://socket.dev/npm/package/runlanes/overview/0.2.1)
 
 **See what your coding agents actually did.**
@@ -23,12 +28,6 @@ npx runlanes
 ```
 
 Opens a console at `http://127.0.0.1:4180` for the project you ran it in.
-
-> [!NOTE]
-> This is **runlanes**. Other tools publish as AgentTrace (`@agenttrace/*`,
-> `agent-trace`, `agenttrace-cli`, …). Those wrap or instrument a run. This one
-> reads transcripts the runner already wrote, so it works on runs that have
-> already finished.
 
 **[What you get](#what-you-get)** · **[Install](#install)** ·
 **[Supported agents](#supported-agents)** · **[Usage](#usage)** ·
