@@ -29,6 +29,10 @@ npx runlanes
 
 Opens a console at `http://127.0.0.1:4180` for the project you ran it in.
 
+**[Open the live demo →](https://dev-somesh.github.io/runlanes/)** — the real
+console, exported by `--export`, drawing a staged project across all six
+runners. The runs on it are invented; yours will not be.
+
 **[What you get](#what-you-get)** · **[Install](#install)** ·
 **[Supported agents](#supported-agents)** · **[Usage](#usage)** ·
 **[Configuration](#configuration)** ·
