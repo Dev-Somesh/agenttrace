@@ -1,0 +1,71 @@
+name: Demo
+
+# Publishes the console itself, not a screenshot of it. The page is built by
+# `runlanes --export`, so it stays in step with the UI: if a change breaks the
+# console, it breaks the demo, and that shows up here rather than in someone's
+# first impression.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "docs/demo/**"
+      - ".github/workflows/demo.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: demo
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+
+      - name: Build the demo
+        run: node docs/demo/build.mjs site
+
+      # A demo that renders an empty console is worse than no demo. Check the
+      # export actually carries the staged runs before it goes anywhere.
+      - name: The page carries the staged data
+        run: |
+          node -e '
+            const fs = require("fs");
+            const html = fs.readFileSync("site/index.html", "utf8");
+            const m = html.match(/window\.__SNAPSHOT__=(.*?);<\/script>/s);
+            if (!m) { console.error("::error::no snapshot injected"); process.exit(1); }
+            const s = JSON.parse(m[1]);
+            const runners = new Set(s.sessions.map((x) => x.sourceId));
+            const runs = s.sessions.reduce((n, x) => n + x.runs.length, 0);
+            console.log(`runners=${runners.size} sessions=${s.sessions.length} runs=${runs}`);
+            if (runners.size < 6) { console.error("::error::expected all six runners"); process.exit(1); }
+            if (!html.includes("A demonstration.")) { console.error("::error::staged-data notice missing"); process.exit(1); }
+          '
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
