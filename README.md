@@ -1,7 +1,8 @@
 # runlanes
 
-![runlanes](docs/screenshots/banner.png)
+![runlanes](https://raw.githubusercontent.com/Dev-Somesh/runlanes/main/docs/screenshots/banner.png)
 
+[![npm](https://img.shields.io/npm/v/runlanes?color=3DDC97)](https://www.npmjs.com/package/runlanes)
 [![CI](https://github.com/Dev-Somesh/runlanes/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Dev-Somesh/runlanes/actions/workflows/ci.yml)
 [![Node](https://img.shields.io/badge/node-%E2%89%A518-3DDC97)](https://nodejs.org)
 [![Dependencies](https://img.shields.io/badge/dependencies-0-3DDC97)](package.json)
@@ -46,7 +47,7 @@ fourteen runs, captured from an actual day's work.
 
 A bipartite graph linking runs to the files two or more of them touched.
 
-![Shared files: which runs touched the same file](docs/screenshots/console-shared-files.png)
+![Shared files: which runs touched the same file](https://raw.githubusercontent.com/Dev-Somesh/runlanes/main/docs/screenshots/console-shared-files.png)
 
 Edges are **observed from the transcripts**, not read from prompts. A run
 appears against a file because it opened it — a different claim from "its
@@ -60,7 +61,7 @@ newest chat. Per session: what the **main conversation** spent, what it
 figure** — the share of elapsed time with more than one run active. Launching
 four agents together does not mean they overlapped; this says whether they did.
 
-![Now tab](docs/screenshots/console-now.png)
+![Now tab](https://raw.githubusercontent.com/Dev-Somesh/runlanes/main/docs/screenshots/console-now.png)
 
 The **execution timeline** puts one lane per run, placed by when it actually
 ran. Overlapping bars are real concurrency.
@@ -70,7 +71,7 @@ ran. Overlapping bars are real concurrency.
 Every session found for the project, newest write first, each with its own runs
 and shared-file graph — so you can see what a run cost weeks later.
 
-![History tab](docs/screenshots/console-history.png)
+![History tab](https://raw.githubusercontent.com/Dev-Somesh/runlanes/main/docs/screenshots/console-history.png)
 
 ### Docs
 
@@ -79,7 +80,7 @@ project, rendered in place. Files from a home-directory pile belonging to other
 repos are not shown. If the project has none, the tab lists short samples so you
 can see what it is for.
 
-![Docs tab](docs/screenshots/console-docs.png)
+![Docs tab](https://raw.githubusercontent.com/Dev-Somesh/runlanes/main/docs/screenshots/console-docs.png)
 
 **On a project with little to show**, the console says so rather than inventing
 activity. A graph with nothing shared, a history of one session, and a Docs tab
