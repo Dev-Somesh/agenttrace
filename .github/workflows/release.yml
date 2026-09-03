@@ -1,0 +1,95 @@
+name: Release
+
+# Publishing by hand means the registry has to take the tarball's word for where
+# it came from. Publishing here signs it: npm records the commit, the workflow
+# and the runner that built it, and anyone can check that against this repo.
+# The same OIDC exchange replaces the credential, so there is no token in the
+# repository and no one-time password to type.
+#
+# Shipping a release is: bump the version, commit, tag it, push the tag.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # A tag is not a reason to skip the matrix. This is the same gate main runs.
+  test:
+    name: Node ${{ matrix.node }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ["18", "20", "22"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm test
+
+  publish:
+    name: Publish to npm
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write # the OIDC token npm exchanges for publish rights
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+
+      # Trusted publishing needs a newer npm than any Node release currently
+      # bundles. Without this the publish falls back to asking for a token.
+      - name: Use an npm that can do trusted publishing
+        run: |
+          npm install -g npm@latest
+          npm --version
+
+      # A tag that disagrees with package.json would publish a version nobody
+      # can trace back to a commit. Cheaper to catch here than to unpublish.
+      - name: Tag matches package version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PKG=$(node -p "require('./package.json').version")
+          echo "tag=$TAG package.json=$PKG"
+          [ "$TAG" = "$PKG" ] || { echo "::error::tag $GITHUB_REF_NAME does not match package.json $PKG"; exit 1; }
+
+      # Republishing an existing version fails the job with a 403 that reads
+      # like an auth problem. Say what it actually is.
+      - name: Version is not already published
+        run: |
+          PKG=$(node -p "require('./package.json').version")
+          if npm view "runlanes@$PKG" version >/dev/null 2>&1; then
+            echo "::error::runlanes@$PKG is already on the registry — bump the version"
+            exit 1
+          fi
+          echo "runlanes@$PKG is unpublished."
+
+      - name: Publish
+        run: npm publish --provenance --access public
+
+      - name: Summary
+        run: |
+          PKG=$(node -p "require('./package.json').version")
+          {
+            echo "### runlanes@$PKG published"
+            echo ""
+            echo "- <https://www.npmjs.com/package/runlanes/v/$PKG>"
+            echo "- Built from \`${GITHUB_SHA}\` with provenance."
+          } >> "$GITHUB_STEP_SUMMARY"
