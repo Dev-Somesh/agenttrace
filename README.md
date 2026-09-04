@@ -239,6 +239,11 @@ excluded is shown beside the total.
 Everything is read from local files and rendered locally. **runlanes makes no
 network requests and transmits nothing.** There is no telemetry and no account.
 
+None of that is taken on trust. CI fails the build if a network call appears in
+the server-side code, if the default bind stops being loopback, or if a runtime
+dependency is added. A README claim is a sentence somebody wrote once; a CI step
+is a claim that has to survive every commit.
+
 > [!WARNING]
 > Transcripts can contain prompts, file paths, and anything typed into a shell —
 > including secrets. Treat the console as you would the transcripts themselves.
@@ -249,6 +254,20 @@ this machine, Wi-Fi, VPN, and, if `ngrok` or `cloudflared` is already on your
 PATH, a public internet URL. Anyone who can open a live URL can read the
 transcripts, and can stop sharing from the same page. runlanes does not bundle
 a tunnel client and does not start one unless you ask.
+
+### What an export carries
+
+`--export` writes a single file that is easy to attach to a pull request, so it
+is worth knowing what travels with it. Every document runlanes collected is
+stripped out — project plans and skills included, not only the user-scope ones.
+
+What remains is the runs, and two things in them are worth a look before the
+file goes anywhere public. **A run is titled with your prompt, verbatim**, so
+`fix the auth bug before the NewCo demo` would be in the file. And each run
+lists the paths it read and wrote, which sketches the shape of the codebase.
+
+Fine for a PR on the repository the runs came from. Read it before posting it
+somewhere it can be read by people who are not on the project.
 
 ---
 
