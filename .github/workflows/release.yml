@@ -43,7 +43,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
-      contents: read
+      contents: write # creating the GitHub Release for this tag
       id-token: write # the OIDC token npm exchanges for publish rights
     steps:
       - uses: actions/checkout@v7
@@ -83,6 +83,23 @@ jobs:
 
       - name: Publish
         run: npm publish --provenance --access public
+
+      # The tag alone leaves the Releases page showing whatever was last
+      # published by hand, which is how it fell three versions behind. The
+      # notes come from the tag's own annotation, so they are written once.
+      - name: GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PKG=$(node -p "require('./package.json').version")
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            echo "release $GITHUB_REF_NAME already exists"
+            exit 0
+          fi
+          git tag -l --format='%(contents)' "$GITHUB_REF_NAME" > notes.md
+          [ -s notes.md ] || echo "runlanes $PKG" > notes.md
+          gh release create "$GITHUB_REF_NAME" --latest --title "runlanes $PKG" --notes-file notes.md
 
       - name: Summary
         run: |
