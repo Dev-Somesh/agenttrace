@@ -13,7 +13,7 @@ import { fileURLToPath } from "node:url";
 import { createApp, buildState } from "./server.js";
 import { availableSources } from "./sources/index.js";
 import { parseSince } from "./analyse.js";
-import { snapshotHtml } from "./export.js";
+import { snapshotHtml, promptTitleCount } from "./export.js";
 import { accessInfo, projectName } from "./access.js";
 import { installSkill, SKILL_BODY } from "./skill.js";
 import { skillTargets } from "./sources/skills.js";
@@ -43,6 +43,9 @@ if (has("help") || has("h")) {
                                    (1h, 7d, or an ISO date)
     npx runlanes --export out.html
                                    write a self-contained snapshot and exit
+    npx runlanes --export out.html --redact
+                                   ... with run titles replaced, so it can be
+                                   shared outside the project
     npx runlanes --lan           bind all interfaces (phone on the same Wi-Fi)
     npx runlanes --tunnel        also start ngrok / cloudflared if installed
     npx runlanes --detach        keep serving after this terminal closes
@@ -141,9 +144,25 @@ if (has("json")) {
 if (has("export")) {
   const dest = flag("export", "runlanes.html");
   const ui = path.join(path.dirname(here), "ui", "index.html");
-  const html = snapshotHtml(fs.readFileSync(ui, "utf8"), buildState(cwd, { docs, since }));
+  const redact = has("redact");
+  const state = buildState(cwd, { docs, since });
+  const html = snapshotHtml(fs.readFileSync(ui, "utf8"), state, { redact });
   fs.writeFileSync(dest, html);
   console.log(`Wrote ${dest}`);
+
+  // Said here rather than only in the README, because the moment someone
+  // writes a file they intend to share is the moment this matters. A run is
+  // titled with the prompt that started it, and a prompt can name a client,
+  // an incident or an unreleased feature.
+  const titles = promptTitleCount(state);
+  if (redact) {
+    console.log(`Redacted ${titles} run title${titles === 1 ? "" : "s"}. Documents were left out.`);
+  } else if (titles) {
+    console.log(
+      `Contains ${titles} run title${titles === 1 ? "" : "s"} taken from your prompts, and the paths each run touched.\n` +
+        `Read it before posting it somewhere public, or re-run with --redact.`
+    );
+  }
   process.exit(0);
 }
 

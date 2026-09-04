@@ -261,13 +261,26 @@ a tunnel client and does not start one unless you ask.
 is worth knowing what travels with it. Every document runlanes collected is
 stripped out — project plans and skills included, not only the user-scope ones.
 
-What remains is the runs, and two things in them are worth a look before the
-file goes anywhere public. **A run is titled with your prompt, verbatim**, so
-`fix the auth bug before the NewCo demo` would be in the file. And each run
-lists the paths it read and wrote, which sketches the shape of the codebase.
+What remains is the runs, and **a run is titled with your prompt, verbatim** —
+so `fix the auth bug before the NewCo demo` would be in the file, alongside the
+paths each run read and wrote.
 
-Fine for a PR on the repository the runs came from. Read it before posting it
-somewhere it can be read by people who are not on the project.
+That is fine for a PR on the repository the runs came from. For anywhere else,
+`--redact` replaces the titles with `Run 1`, `Run 2`, … and leaves every
+measurement the file exists to show:
+
+```bash
+npx runlanes --export out.html --redact
+```
+
+Either way the export says what it wrote, so the choice is in front of you at
+the moment you make it rather than in this README:
+
+```
+Wrote out.html
+Contains 8 run titles taken from your prompts, and the paths each run touched.
+Read it before posting it somewhere public, or re-run with --redact.
+```
 
 ---
 

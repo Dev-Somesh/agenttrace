@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { estimateCostUsd, priceFor, sumCostUsd } from "../src/prices.js";
 import { parseSince, filterSessions, lifetime } from "../src/analyse.js";
-import { snapshotHtml } from "../src/export.js";
+import { snapshotHtml, redactRuns, redactState, promptTitleCount } from "../src/export.js";
 
 test("priceFor matches the longest model-family prefix", () => {
   assert.equal(priceFor("claude-sonnet-4-20250514").input, 3);
@@ -87,6 +87,80 @@ test("snapshotHtml strips documents so a PR file cannot leak user plans", () => 
     documents: [{ id: "user-plans", items: [{ markdown: "secret" }] }],
   });
   assert.ok(!html.includes("secret"));
+});
+
+// The stripping is not scoped to a home directory. A plan sitting in the
+// project's own .claude is exactly as unwelcome in a file someone uploads.
+test("documents are stripped whatever their scope", () => {
+  const html = snapshotHtml("<html><script></script></html>", {
+    cwd: "/tmp/x",
+    documents: [
+      { id: "user-plans", items: [{ markdown: "from a home directory" }] },
+      { id: "project-plans", items: [{ markdown: "from the repo itself" }] },
+    ],
+  });
+  assert.ok(!html.includes("from a home directory"));
+  assert.ok(!html.includes("from the repo itself"));
+});
+
+// A run is titled with the prompt that started it, which is the one thing in a
+// snapshot that can name a client or an unreleased feature.
+test("--redact replaces prompt-derived run titles and keeps the measurements", () => {
+  const state = {
+    cwd: "/tmp/x",
+    sessions: [
+      { id: "s1", runs: [{ id: "r1", name: "ship the NewCo migration", tokens: 900, reads: ["src/a.ts"] }] },
+      { id: "s2", runs: [{ id: "r2", name: "patch the incident", tokens: 40 }] },
+    ],
+  };
+  const html = snapshotHtml("<html><script></script></html>", state, { redact: true });
+  assert.ok(!html.includes("NewCo"));
+  assert.ok(!html.includes("patch the incident"));
+  assert.match(html, /"name":"Run 1"/);
+  assert.match(html, /"name":"Run 2"/);
+  // Redaction is about the prompt, not about the numbers the file exists for.
+  assert.match(html, /"tokens":900/);
+  assert.match(html, /"src\/a\.ts"/);
+});
+
+test("titles survive an export that was not asked to redact", () => {
+  const state = { cwd: "/tmp/x", sessions: [{ id: "s1", runs: [{ id: "r1", name: "ship the NewCo migration" }] }] };
+  assert.ok(snapshotHtml("<html><script></script></html>", state).includes("NewCo"));
+});
+
+test("redactRuns leaves a session with no runs alone", () => {
+  assert.deepEqual(redactRuns([{ id: "s1" }]), [{ id: "s1", runs: [] }]);
+});
+
+// A state payload holds the same run in three places: the history, what is
+// live, and the session doing the work. Redacting only `sessions` leaves the
+// prompt sitting in `now`, which is how the first attempt at this leaked.
+test("--redact reaches run titles wherever the state keeps them", () => {
+  const run = { id: "r1", name: "ship the NewCo migration", tokens: 5 };
+  const session = { id: "s1", runs: [run] };
+  const html = snapshotHtml("<html><script></script></html>", {
+    sessions: [session],
+    now: [session],
+    current: session,
+  }, { redact: true });
+  assert.equal(html.includes("NewCo"), false);
+  // One run seen three times is one run, and is labelled the same in each.
+  assert.equal(html.match(/"name":"Run 1"/g).length, 3);
+  assert.equal(html.includes("Run 2"), false);
+});
+
+test("promptTitleCount counts a run once however many places hold it", () => {
+  const session = { id: "s1", runs: [{ id: "r1" }, { id: "r2" }] };
+  assert.equal(promptTitleCount({ sessions: [session], now: [session], current: session }), 2);
+});
+
+test("redactState leaves a run with no id readable rather than dropping it", () => {
+  const out = redactState({ sessions: [{ id: "s1", runs: [{ name: "no id here" }] }] });
+  assert.equal(out.sessions[0].runs[0].name.startsWith("Run "), true);
+});
+
+test("promptTitleCount is zero for a state with nothing in it", () => {
+  assert.equal(promptTitleCount({}), 0);
 });
 
 // A runner that records no usage reports 0 tokens because the Run shape needs
