@@ -1,6 +1,6 @@
 # runlanes
 
-![runlanes](https://raw.githubusercontent.com/Dev-Somesh/runlanes/main/docs/screenshots/banner.png)
+![runlanes: the console, from staged runs across six agent runners](https://raw.githubusercontent.com/Dev-Somesh/runlanes/main/docs/screenshots/console.gif)
 
 [![npm](https://img.shields.io/npm/v/runlanes?color=3DDC97)](https://www.npmjs.com/package/runlanes)
 &ensp;
