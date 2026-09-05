@@ -85,6 +85,16 @@ svg{display:block;width:100%}
   border:1px solid currentColor;color:var(--dim);white-space:nowrap}
 .tag.running{color:var(--signal)} .tag.kind{color:var(--cyan)} .tag.model{color:var(--violet)}
 
+.clash{border:1px solid var(--alert);background:var(--panel);padding:12px 15px;margin:0 0 18px}
+.clash h2{margin:0 0 8px;font-size:.7rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--alert)}
+.clash .f{font-size:.86rem;font-weight:600;color:var(--ink);margin-bottom:3px}
+.clash .who{font-size:.68rem;color:var(--dim);line-height:1.75}
+.clash .who b{color:var(--ink);font-weight:600}
+.clash .row{padding:7px 0;border-top:1px solid var(--grid)}
+.clash .row:first-of-type{border-top:0}
+.clash pre{margin:7px 0 0;padding:7px 10px;background:var(--panel-2);border:1px solid var(--line);
+  overflow-x:auto;font-size:.66rem;color:var(--dim)}
+.clash .why{font-size:.63rem;color:var(--faint);margin:9px 0 0;line-height:1.65;max-width:80ch}
 .note{border-left:2px solid var(--warn);padding:3px 0 3px 14px;margin:0 0 16px;font-size:.71rem;color:var(--dim);line-height:1.7}
 .note b{color:var(--ink)}
 .empty{padding:34px 0;text-align:center;color:var(--dim);font-size:.76rem}
@@ -200,6 +210,7 @@ footer{padding:34px 0 0;font-size:.62rem;color:var(--faint);line-height:1.9}
 
 <section class="panel" id="p-now" role="tabpanel" aria-labelledby="t-now">
   <div class="stats" id="stats"></div>
+  <div id="clash" hidden></div>
   <div class="card">
     <h2>Execution timeline</h2>
     <p class="hint" id="tlhint">Each lane is one run, placed by when it actually ran. Overlapping bars were concurrent.</p>
@@ -430,6 +441,32 @@ function graph(runs,shared,el,compact,collide){
   svg.setAttribute("height",H);svg.innerHTML=s;
 }
 
+/**
+ * A collision is time-sensitive: two agents are on the same file right now.
+ * It is drawn on the tab people land on rather than behind the graph, and it
+ * names the command that can answer what the console deliberately will not —
+ * which edit is actually on disk.
+ */
+function renderClash(d,runs,many){
+  const box=document.getElementById("clash");
+  const hits=d.nowCollisions||[];
+  if(!box)return;
+  if(!hits.length){box.hidden=true;box.innerHTML="";return}
+  const by=new Map(runs.map(r=>[r.id,r]));
+  const label=r=>r?((many&&r.sourceLabel?r.sourceLabel+" · ":"")+(r.name||r.id)):"a run since ended";
+  const rows=hits.slice(0,4).map(h=>{
+    const who=h.runs.map(id=>`<b>${esc(label(by.get(id)))}</b>`).join(" and ");
+    return `<div class="row"><div class="f">${esc(h.file)}</div>`+
+      `<div class="who">${who} — both wrote it while both were running, overlapping ${dur(h.overlapMs)}.</div>`+
+      `<pre>git diff -- ${esc(h.file)}</pre></div>`;
+  }).join("");
+  const more=hits.length>4?`<div class="who" style="padding-top:7px">and ${hits.length-4} more.</div>`:"";
+  box.innerHTML=`<div class="clash"><h2>${hits.length===1?"Collision":hits.length+" collisions"}</h2>${rows}${more}`+
+    `<p class="why">Neither run was working from a settled file. Which edit survived is not in the transcripts — `+
+    `they record that a write was requested with a path, not the bytes on either side — so check the working tree rather than trusting either run's account of it.</p></div>`;
+  box.hidden=false;
+}
+
 function renderAccess(d){
   const box=document.getElementById("access");
   const a=d.access||{};
@@ -596,6 +633,8 @@ function draw(d){
   hint.textContent=running
     ?`Each lane is one run, placed by when it actually ran.${srcNote}${running} still running.`
     :`Each lane is one run, placed by when it actually ran.${srcNote}All ${runs.length} have finished — this is completed history, not live activity.`;
+
+  renderClash(d,runs,many);
 
   const labeled=runs.map(r=>({...r,name:(many&&r.sourceLabel?r.sourceLabel+" · ":"")+(r.name||"")}));
   timeline(labeled);

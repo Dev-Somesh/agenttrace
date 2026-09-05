@@ -67,6 +67,19 @@ write was requested with a path, not the bytes before and after it, so the
 honest statement is that the runs were on the same ground at the same time.
 What landed is a question for `git`.
 
+A collision is time-sensitive, so it is also called out on the **Now** tab
+rather than only in the graph, naming both runs and the command that answers
+what the console will not:
+
+```
+COLLISION
+src/auth.ts
+Claude Code · Add rate limiting … and Claude Code · Audit the auth flow …
+— both wrote it while both were running, overlapping 7m 00s.
+
+  git diff -- src/auth.ts
+```
+
 ### Now
 
 Every live session on this project, across runners and models, not just the
