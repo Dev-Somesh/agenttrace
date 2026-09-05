@@ -128,6 +128,19 @@ cd runlanes
 node src/cli.js --dir /path/to/your-project
 ```
 
+**Or let your agent do it.** Paste this to Claude Code, Cursor, Codex, Gemini
+CLI, Copilot CLI or Kiro:
+
+> Set up runlanes for this project and open the dashboard. Follow the
+> "For coding agents" section of
+> https://github.com/Dev-Somesh/runlanes
+
+That section is written to be followed literally, and it tells the agent the
+two things it otherwise gets wrong: start the server detached, or it blocks
+until it times out, and never run `npm install`, because there is nothing to
+install. See [For coding agents](#for-coding-agents) for the full text and for
+`--install-skill`, which teaches the agents on your machine once.
+
 ### Supported agents
 
 Two different things are worth separating. **Measuring** an agent means reading
