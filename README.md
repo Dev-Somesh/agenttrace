@@ -12,7 +12,7 @@
 &ensp;
 [![Licence](https://img.shields.io/badge/licence-MIT-38BDF8)](LICENSE)
 &ensp;
-[![Socket](https://badge.socket.dev/npm/package/runlanes/0.2.1)](https://socket.dev/npm/package/runlanes/overview/0.2.1)
+[![Socket](https://badge.socket.dev/npm/package/runlanes/0.4.1)](https://socket.dev/npm/package/runlanes/overview/0.4.1)
 
 **See what your coding agents actually did.**
 
