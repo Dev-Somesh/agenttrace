@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { collectSessions, collectDocuments, availableSources } from "./sources/index.js";
 import {
   sharedFiles,
+  collisions,
   ownFiles,
   lifetime,
   concurrency,
@@ -128,6 +129,7 @@ export function buildState(cwd, { docs = null, since = null, access = null } = {
       ...s,
       sourceLabel,
       shared,
+      collisions: collisions(s.runs),
       concurrency: concurrency(s.runs),
       // The main conversation is priced too. Pricing only the runs reported
       // the cost of what a session delegated and none of what it did itself.
@@ -179,6 +181,7 @@ export function buildState(cwd, { docs = null, since = null, access = null } = {
     now,
     across: modelsInPlay(now),
     nowShared: sharedFiles(nowRuns),
+    nowCollisions: collisions(nowRuns),
     nowConcurrency: concurrency(nowRuns),
     sessions: linked,
     lifetime: lifetime(linked),

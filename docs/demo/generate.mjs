@@ -82,12 +82,16 @@ write(path.join(CWD, ".cursor/rules/api.mdc"), "# API rules\nPrefer explicit typ
     turn(min(22), 410, 520, 0, 44000, use("Edit", { file_path: "src/auth.ts" })),
   ));
 
+  // This run and the rate-limit run both edit src/auth.ts while both are live:
+  // a collision, which is a stronger claim than sharing a file and the one the
+  // console should be able to demonstrate.
   write(path.join(subs, "agent-audit.meta.json"), JSON.stringify({ agentType: "Explore", description: "Audit the auth flow for missing checks", spawnDepth: 1 }));
   write(path.join(subs, "agent-audit.jsonl"), lines(
     { type: "user", timestamp: min(29), message: { role: "user", content: "Audit the auth flow for missing checks" } },
     turn(min(29), 2800, 90, 8200, 0, use("Read", { file_path: "src/auth.ts" })),
     turn(min(27), 520, 160, 0, 19000, use("Read", { file_path: "src/server.ts" })),
     turn(min(25), 480, 140, 0, 26000, use("Read", { file_path: "test/auth.test.ts" })),
+    turn(min(23), 690, 740, 0, 30000, use("Edit", { file_path: "src/auth.ts" })),
     turn(min(21), 610, 980, 0, 33000),
   ));
 }

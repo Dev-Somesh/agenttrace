@@ -24,6 +24,53 @@ export function sharedFiles(runs) {
     .sort((a, b) => b.runs.length - a.runs.length || a.file.localeCompare(b.file));
 }
 
+/**
+ * Files two runs both wrote while both were running.
+ *
+ * `sharedFiles` reports contact, which is a weaker claim than it looks: two
+ * runs reading the same config an hour apart share a file and were never in
+ * each other's way. A collision is the stronger claim — both runs wrote, and
+ * their spans overlapped, so neither was working from a settled file.
+ *
+ * What this does not claim is what landed. A transcript records that a write
+ * was requested with a path, not the bytes before and after, so the honest
+ * statement is that the runs were on the same ground at the same time. Which
+ * edit survived is a question for git.
+ */
+export function collisions(runs) {
+  const span = (r) =>
+    r.startedAt && r.lastActivityAt ? [+new Date(r.startedAt), +new Date(r.lastActivityAt)] : null;
+
+  const writers = new Map();
+  for (const run of runs) {
+    const at = span(run);
+    if (!at) continue; // a run with no clock cannot be placed against another
+    for (const file of run.writes || []) {
+      if (!writers.has(file)) writers.set(file, []);
+      writers.get(file).push({ id: run.id, at });
+    }
+  }
+
+  const out = [];
+  for (const [file, who] of writers) {
+    if (who.length < 2) continue;
+    const hit = new Set();
+    let widest = 0;
+    for (let i = 0; i < who.length; i++) {
+      for (let j = i + 1; j < who.length; j++) {
+        const overlap = Math.min(who[i].at[1], who[j].at[1]) - Math.max(who[i].at[0], who[j].at[0]);
+        // Touching end to end is a handover, not a collision.
+        if (overlap <= 0) continue;
+        hit.add(who[i].id).add(who[j].id);
+        widest = Math.max(widest, overlap);
+      }
+    }
+    if (hit.size > 1) out.push({ file, runs: [...hit], overlapMs: widest });
+  }
+
+  return out.sort((a, b) => b.runs.length - a.runs.length || b.overlapMs - a.overlapMs || a.file.localeCompare(b.file));
+}
+
 /** Files only one run touched — that run's own territory. */
 export function ownFiles(run, shared) {
   const sharedSet = new Set(shared.map((s) => s.file));

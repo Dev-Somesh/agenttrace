@@ -212,7 +212,7 @@ footer{padding:34px 0 0;font-size:.62rem;color:var(--faint);line-height:1.9}
 <section class="panel" id="p-graph" role="tabpanel" aria-labelledby="t-graph" hidden>
   <div class="card">
     <h2>Shared files</h2>
-    <p class="hint">Runs on the left, files two or more of them touched on the right — including across runners that are live on this project together. Edges are observed from the transcripts, not declared. Files only one run touched are that run's own territory and are listed with it instead.</p>
+    <p class="hint">Runs on the left, files two or more of them touched on the right — including across runners that are live on this project together. Edges are observed from the transcripts, not declared. Files only one run touched are that run's own territory and are listed with it instead. A file in <b style="color:var(--alert)">red</b> is a collision rather than contact: two runs both wrote it while both were running, so neither was working from a settled file. Which edit survived is a question for git — this says only that they were on the same ground at the same time.</p>
     <svg id="graph" role="img" aria-label="Run and shared file graph"></svg>
   </div>
 </section>
@@ -397,9 +397,12 @@ function timeline(runs){
   svg.setAttribute("viewBox",`0 0 ${W} ${H}`);svg.setAttribute("height",H);svg.innerHTML=s;
 }
 
-function graph(runs,shared,el,compact){
+function graph(runs,shared,el,compact,collide){
   const svg=typeof el==="string"?document.getElementById(el):el;
-  const hubs=(shared||[]).slice(0,compact?8:12);
+  const hits=new Map((collide||[]).map(c=>[c.file,new Set(c.runs)]));
+  // A collision is the sharper claim, so it is never the thing that falls off
+  // the end of the list when there are more shared files than rows.
+  const hubs=(shared||[]).slice().sort((a,b)=>(hits.has(b.file)?1:0)-(hits.has(a.file)?1:0)).slice(0,compact?8:12);
   if(!svg||!runs.length){if(svg)svg.innerHTML="";return}
   const rowH=compact?26:30,top=compact?16:30,pad=12;
   const W=Math.max(560,(svg.parentElement?.clientWidth||900)-2);
@@ -409,19 +412,20 @@ function graph(runs,shared,el,compact){
   let s="";
   if(!compact){s+=`<text x="${aX}" y="16" fill="var(--faint)" font-size="9" letter-spacing="1.4">RUNS</text>`;
     s+=`<text x="${fX}" y="16" fill="var(--faint)" font-size="9" letter-spacing="1.4">SHARED FILES</text>`}
-  hubs.forEach((h,r)=>{const y2=ay(r);h.runs.forEach(id=>{const i=idx.get(id);if(i==null)return;
-    const y1=ay(i),x1=aX+aW,x2=fX-10,mid=(x1+x2)/2;
-    s+=`<path d="M${x1} ${y1} C ${mid} ${y1}, ${mid} ${y2}, ${x2} ${y2}" fill="none" stroke="${tone(runs[i])}" stroke-width="1" opacity=".28"/>`})});
+  hubs.forEach((h,r)=>{const y2=ay(r),hit=hits.get(h.file);h.runs.forEach(id=>{const i=idx.get(id);if(i==null)return;
+    const y1=ay(i),x1=aX+aW,x2=fX-10,mid=(x1+x2)/2,clash=hit&&hit.has(id);
+    s+=`<path d="M${x1} ${y1} C ${mid} ${y1}, ${mid} ${y2}, ${x2} ${y2}" fill="none" stroke="${clash?"var(--alert)":tone(runs[i])}" stroke-width="${clash?1.6:1}" opacity="${clash?.85:.28}"/>`})});
   runs.forEach((r,i)=>{const y=ay(i),c=tone(r),h=rowH-10;
     s+=`<rect x="${aX}" y="${y-h/2}" width="${aW}" height="${h}" fill="var(--panel-2)" stroke="var(--line)"/>`;
     s+=`<rect x="${aX}" y="${y-h/2}" width="3" height="${h}" fill="${c}"/>`;
     const max=Math.floor((aW-104)/5.6),nm=(r.name||"").length>max?(r.name||"").slice(0,max-1)+"…":(r.name||"");
     s+=`<text x="${aX+11}" y="${y+3.5}" fill="var(--ink)" font-size="10">${esc(nm)}</text>`;
     s+=`<text x="${aX+aW-9}" y="${y+3.5}" fill="var(--dim)" font-size="8.5" text-anchor="end">${tok(r,"tokens")}</text>`});
-  hubs.forEach((h,r)=>{const y=ay(r);
-    s+=`<circle cx="${fX-10}" cy="${y}" r="2.5" fill="var(--signal)"/>`;
+  hubs.forEach((h,r)=>{const y=ay(r),hit=hits.get(h.file);
+    s+=`<circle cx="${fX-10}" cy="${y}" r="${hit?3.2:2.5}" fill="${hit?"var(--alert)":"var(--signal)"}"/>`;
     s+=`<text x="${fX-20}" y="${y+3.5}" fill="var(--faint)" font-size="9" text-anchor="end">${h.runs.length}×</text>`;
-    s+=`<text x="${fX}" y="${y+3.5}" fill="var(--ink)" font-size="9.5">${esc(h.file)}</text>`});
+    s+=`<text x="${fX}" y="${y+3.5}" fill="${hit?"var(--alert)":"var(--ink)"}" font-size="9.5">${esc(h.file)}</text>`;
+    if(hit)s+=`<text x="${fX+(h.file||"").length*5.6+12}" y="${y+3.5}" fill="var(--alert)" font-size="8" letter-spacing=".8">BOTH WROTE WHILE BOTH RAN</text>`});
   svg.setAttribute("viewBox",`0 0 ${W} ${H}`);svg.setAttribute("preserveAspectRatio","xMinYMin meet");
   svg.setAttribute("height",H);svg.innerHTML=s;
 }
@@ -595,7 +599,7 @@ function draw(d){
 
   const labeled=runs.map(r=>({...r,name:(many&&r.sourceLabel?r.sourceLabel+" · ":"")+(r.name||"")}));
   timeline(labeled);
-  graph(labeled,d.nowShared||(now[0]?now[0].shared:[]),"graph",false);
+  graph(labeled,d.nowShared||(now[0]?now[0].shared:[]),"graph",false,d.nowCollisions||(now[0]?now[0].collisions:[]));
   renderDocs(d.documents||[]);
 
   const card=r=>`
@@ -656,7 +660,7 @@ function draw(d){
     </div>`).join("")||'<div class="empty">No history yet.</div>';
   for(const s of d.sessions){
     if(!s.shared.length)continue;
-    graph(s.runs,s.shared,list.querySelector(`svg[data-s="${s.id}"]`),true);
+    graph(s.runs,s.shared,list.querySelector(`svg[data-s="${s.id}"]`),true,s.collisions);
   }
 }
 

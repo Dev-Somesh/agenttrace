@@ -1,6 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { sharedFiles, ownFiles, lifetime, concurrency, nowSessions, modelsInPlay, filterSessions } from "../src/analyse.js";
+import {
+  sharedFiles, ownFiles, lifetime, concurrency, nowSessions, modelsInPlay, filterSessions,
+  collisions,
+} from "../src/analyse.js";
 
 const run = (id, over = {}) => ({
   id, name: id, kind: null, model: null, status: "finished",
@@ -41,6 +44,60 @@ test("shared files are ordered by how many runs touched them", () => {
   ]);
   assert.equal(shared[0].file, "hot.ts");
   assert.equal(shared[0].runs.length, 3);
+});
+
+const at = (s) => new Date(Date.UTC(2026, 0, 15, 10, 0, s)).toISOString();
+const touching = (id, opts) => ({ id, reads: [], writes: [], ...opts });
+const writing = (id, file, from, to) =>
+  touching(id, { writes: [file], startedAt: at(from), lastActivityAt: at(to) });
+
+// A shared file says two runs touched the same ground. A collision says they
+// were standing on it together, which is the claim worth interrupting someone
+// for.
+test("a collision is two writers whose runs overlapped", () => {
+  const found = collisions([writing("a", "src/auth.ts", 0, 60), writing("b", "src/auth.ts", 30, 90)]);
+  assert.equal(found.length, 1);
+  assert.equal(found[0].file, "src/auth.ts");
+  assert.deepEqual(found[0].runs.sort(), ["a", "b"]);
+  assert.equal(found[0].overlapMs, 30_000);
+});
+
+test("writes to the same file at different times are a handover, not a collision", () => {
+  assert.deepEqual(collisions([writing("a", "x.ts", 0, 10), writing("b", "x.ts", 20, 30)]), []);
+});
+
+// Runs that end and begin on the same instant did not overlap. Treating that
+// as a collision would flag every orderly handover in a pipeline.
+test("runs that touch end to end do not collide", () => {
+  assert.deepEqual(collisions([writing("a", "x.ts", 0, 30), writing("b", "x.ts", 30, 60)]), []);
+});
+
+test("reading a file while another run writes it is not a collision", () => {
+  const reader = touching("a", { reads: ["x.ts"], startedAt: at(0), lastActivityAt: at(60) });
+  assert.deepEqual(collisions([reader, writing("b", "x.ts", 10, 50)]), []);
+});
+
+test("a run with no clock cannot be placed against another and is left out", () => {
+  const undated = touching("a", { writes: ["x.ts"] });
+  assert.deepEqual(collisions([undated, writing("b", "x.ts", 0, 60)]), []);
+});
+
+test("three runs on one file report every run involved once", () => {
+  const found = collisions([
+    writing("a", "x.ts", 0, 60),
+    writing("b", "x.ts", 30, 90),
+    writing("c", "x.ts", 40, 50),
+  ]);
+  assert.equal(found.length, 1);
+  assert.deepEqual(found[0].runs.sort(), ["a", "b", "c"]);
+});
+
+test("a run colliding on two files reports both", () => {
+  const found = collisions([
+    touching("a", { writes: ["x.ts", "y.ts"], startedAt: at(0), lastActivityAt: at(60) }),
+    touching("b", { writes: ["x.ts", "y.ts"], startedAt: at(30), lastActivityAt: at(90) }),
+  ]);
+  assert.deepEqual(found.map((c) => c.file).sort(), ["x.ts", "y.ts"]);
 });
 
 test("ownFiles excludes anything another run also touched", () => {

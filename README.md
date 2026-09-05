@@ -57,6 +57,16 @@ Edges are **observed from the transcripts**, not read from prompts. A run
 appears against a file because it opened it — a different claim from "its
 instructions said it would".
 
+Sharing a file is a weaker claim than it looks: two runs reading the same
+config an hour apart share a file and were never in each other's way. A file
+shown in **red** is a **collision** — two runs both *wrote* it while both were
+*running*, so neither was working from a settled file.
+
+What that does not claim is which edit survived. A transcript records that a
+write was requested with a path, not the bytes before and after it, so the
+honest statement is that the runs were on the same ground at the same time.
+What landed is a question for `git`.
+
 ### Now
 
 Every live session on this project, across runners and models, not just the
